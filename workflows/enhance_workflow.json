@@ -1,0 +1,35 @@
+{
+    "prompt": {
+        "inputs": {
+            "image": {
+                "type": "image",
+                "required": true
+            },
+            "prompt": {
+                "type": "string",
+                "default": "A beautiful, colorful, and detailed version of the children's drawing, maintaining the original style and elements while enhancing the quality and details."
+            },
+            "negative_prompt": {
+                "type": "string",
+                "default": "blurry, low quality, distorted, deformed, ugly, bad anatomy, bad proportions"
+            },
+            "steps": {
+                "type": "number",
+                "default": 30
+            },
+            "cfg": {
+                "type": "number",
+                "default": 7.5
+            },
+            "denoise": {
+                "type": "number",
+                "default": 0.75
+            }
+        },
+        "outputs": {
+            "image": {
+                "type": "image"
+            }
+        }
+    }
+} 

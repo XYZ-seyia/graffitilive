@@ -1,0 +1,43 @@
+{
+    "prompt": {
+        "inputs": {
+            "image": {
+                "type": "image",
+                "required": true
+            },
+            "prompt": {
+                "type": "string",
+                "required": true
+            },
+            "negative_prompt": {
+                "type": "string",
+                "default": "blurry, low quality, distorted, deformed, ugly, bad anatomy, bad proportions, flickering, unstable"
+            },
+            "steps": {
+                "type": "number",
+                "default": 30
+            },
+            "cfg": {
+                "type": "number",
+                "default": 7.5
+            },
+            "denoise": {
+                "type": "number",
+                "default": 0.75
+            },
+            "frames": {
+                "type": "number",
+                "default": 16
+            },
+            "fps": {
+                "type": "number",
+                "default": 8
+            }
+        },
+        "outputs": {
+            "video": {
+                "type": "video"
+            }
+        }
+    }
+} 
