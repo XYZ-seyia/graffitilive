@@ -7,12 +7,9 @@ class Config:
     # ComfyUI配置
     COMFYUI_URL = os.getenv('COMFYUI_URL', 'http://localhost:8188')
     
-    # LLM Studio配置
-    LLM_STUDIO_URL = os.getenv('LLM_STUDIO_URL', 'http://localhost:3000')
+    # LLM配置
+    LLM_STUDIO_URL = os.getenv('LLM_STUDIO_URL', 'http://localhost:1234')
     LLM_MODEL = os.getenv('LLM_MODEL', 'default')
-    
-    # OpenAI配置
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     
     # 文件路径配置
     UPLOAD_FOLDER = 'static/uploads'

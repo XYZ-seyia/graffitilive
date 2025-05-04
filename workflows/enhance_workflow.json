@@ -1,35 +1,271 @@
 {
-    "prompt": {
-        "inputs": {
-            "image": {
-                "type": "image",
-                "required": true
-            },
-            "prompt": {
-                "type": "string",
-                "default": "A beautiful, colorful, and detailed version of the children's drawing, maintaining the original style and elements while enhancing the quality and details."
-            },
-            "negative_prompt": {
-                "type": "string",
-                "default": "blurry, low quality, distorted, deformed, ugly, bad anatomy, bad proportions"
-            },
-            "steps": {
-                "type": "number",
-                "default": 30
-            },
-            "cfg": {
-                "type": "number",
-                "default": 7.5
-            },
-            "denoise": {
-                "type": "number",
-                "default": 0.75
-            }
-        },
-        "outputs": {
-            "image": {
-                "type": "image"
-            }
-        }
+  "3": {
+    "inputs": {
+      "seed": 23687749461254,
+      "steps": 20,
+      "cfg": 8,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "normal",
+      "denoise": 0.6,
+      "model": [
+        "28",
+        0
+      ],
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "latent_image": [
+        "19",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
     }
-} 
+  },
+  "6": {
+    "inputs": {
+      "text": "A girl in a blue princess dress, one golden crown on her head, her long, soft brown hair falling naturally, smile expression, The overall cartoon style is brightly colored, with smooth lines, simple and white background, no background elements, sticker, Subject is distinguished from background",
+      "clip": [
+        "28",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": "bad hands, text, watermark, low quality, blurry, malformed, abnormal\n",
+      "clip": [
+        "28",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "10": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "width": [
+        "21",
+        0
+      ],
+      "height": [
+        "22",
+        0
+      ],
+      "crop": "disabled",
+      "samples": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "LatentUpscale",
+    "_meta": {
+      "title": "Upscale Latent"
+    }
+  },
+  "11": {
+    "inputs": {
+      "seed": 110690920600144,
+      "steps": 15,
+      "cfg": 8,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "simple",
+      "denoise": 0.5000000000000001,
+      "model": [
+        "28",
+        0
+      ],
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "latent_image": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "13": {
+    "inputs": {
+      "samples": [
+        "11",
+        0
+      ],
+      "vae": [
+        "16",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "16": {
+    "inputs": {
+      "ckpt_name": "Children's Book MIX_V1.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "18": {
+    "inputs": {
+      "image": "",
+      "upload": "image"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "19": {
+    "inputs": {
+      "pixels": [
+        "18",
+        0
+      ],
+      "vae": [
+        "16",
+        2
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Encode"
+    }
+  },
+  "20": {
+    "inputs": {
+      "image": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "GetImageSize+",
+    "_meta": {
+      "title": "🔧 Get Image Size"
+    }
+  },
+  "21": {
+    "inputs": {
+      "a": [
+        "20",
+        0
+      ],
+      "b": [
+        "27",
+        0
+      ],
+      "operation": "multiply"
+    },
+    "class_type": "easy mathInt",
+    "_meta": {
+      "title": "Math Int"
+    }
+  },
+  "22": {
+    "inputs": {
+      "a": [
+        "20",
+        1
+      ],
+      "b": [
+        "26",
+        0
+      ],
+      "operation": "multiply"
+    },
+    "class_type": "easy mathInt",
+    "_meta": {
+      "title": "Math Int"
+    }
+  },
+  "26": {
+    "inputs": {
+      "float": 1.2000000000000002
+    },
+    "class_type": "VFI FloatToInt",
+    "_meta": {
+      "title": "VFI FloatToInt"
+    }
+  },
+  "27": {
+    "inputs": {
+      "float": 1.2000000000000002
+    },
+    "class_type": "VFI FloatToInt",
+    "_meta": {
+      "title": "VFI FloatToInt"
+    }
+  },
+  "28": {
+    "inputs": {
+      "lora_name": "白边贴纸·风格_v1.0.safetensors",
+      "strength_model": 0.8500000000000002,
+      "strength_clip": 1,
+      "model": [
+        "16",
+        0
+      ],
+      "clip": [
+        "16",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "42": {
+    "inputs": {
+      "rem_mode": "Inspyrenet",
+      "image_output": "Save",
+      "save_prefix": "ComfyUI",
+      "torchscript_jit": false,
+      "add_background": "none",
+      "refine_foreground": false,
+      "images": [
+        "13",
+        0
+      ]
+    },
+    "class_type": "easy imageRemBg",
+    "_meta": {
+      "title": "Image Remove Bg"
+    }
+  },
+  "48": {
+    "inputs": {
+      "float": 0.6
+    },
+    "class_type": "VFI FloatToInt",
+    "_meta": {
+      "title": "VFI FloatToInt"
+    }
+  }
+}
