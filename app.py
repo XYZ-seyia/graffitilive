@@ -1,8 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory, render_template
 import os
 from werkzeug.utils import secure_filename
-from image_analyzer import ImageAnalyzer
-from prompt_generation_agent import PromptGenerationAgent
+from agents.image_analysis_agent import ImageAnalysisAgent
 from services.comfyui_service import ComfyUIService
 import logging
 import requests
@@ -20,29 +19,8 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-limit
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # 初始化服务
-image_analyzer = ImageAnalyzer()
-prompt_agent = PromptGenerationAgent()
-
-# 检查 ComfyUI 服务器是否可用
-def check_comfyui_server():
-    try:
-        response = requests.get("http://localhost:8188/history")
-        if response.status_code == 200:
-            logger.info("ComfyUI 服务器正在运行")
-            return True
-        else:
-            logger.error(f"ComfyUI 服务器返回错误状态码: {response.status_code}")
-            return False
-    except requests.exceptions.ConnectionError:
-        logger.error("无法连接到 ComfyUI 服务器，请确保服务器正在运行")
-        return False
-
-# 初始化 ComfyUI 服务
-comfyui_service = None
-if check_comfyui_server():
-    comfyui_service = ComfyUIService("http://localhost:8188")
-else:
-    logger.error("ComfyUI 服务初始化失败")
+image_analyzer = ImageAnalysisAgent()
+comfyui_service = ComfyUIService("http://localhost:8188")
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
@@ -51,8 +29,9 @@ def allowed_file(filename):
 def index():
     return render_template('index.html')
 
-@app.route('/enhance', methods=['POST'])
-def enhance_image():
+@app.route('/analyze', methods=['POST'])
+def analyze_image():
+    """分析上传的图片"""
     if 'file' not in request.files:
         return jsonify({'error': '没有上传文件'}), 400
     
@@ -60,8 +39,46 @@ def enhance_image():
     if file.filename == '':
         return jsonify({'error': '没有选择文件'}), 400
     
-    if not comfyui_service:
-        return jsonify({'error': 'ComfyUI 服务未初始化，请确保服务器正在运行'}), 500
+    if not allowed_file(file.filename):
+        return jsonify({'error': '不支持的文件格式'}), 400
+    
+    try:
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        
+        # 获取图片分析结果
+        result = image_analyzer.analyze(filepath)
+        
+        if result["status"] == "error":
+            return jsonify({
+                'error': '图片分析失败',
+                'details': result["error"]
+            }), 500
+        
+        return jsonify({
+            'success': True,
+            'review': result["review"],
+            'features': result["features"],
+            'image_path': f"/uploads/{filename}"
+        })
+        
+    except Exception as e:
+        logger.error(f"处理失败: {str(e)}")
+        return jsonify({'error': '图片处理失败'}), 500
+
+@app.route('/enhance', methods=['POST'])
+def enhance_image():
+    """美化上传的图片"""
+    if 'file' not in request.files:
+        return jsonify({'error': '没有上传文件'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': '没有选择文件'}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({'error': '不支持的文件格式'}), 400
     
     try:
         # 获取降噪值，默认为0.6
@@ -71,17 +88,21 @@ def enhance_image():
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
-        logger.info(f"文件已保存: {filepath}")
         
-        # 使用 ComfyUI 美化图片
+        # 使用ComfyUI美化图片
         enhanced_path = comfyui_service.enhance_image(filepath, denoise_value)
         if not enhanced_path:
             return jsonify({'error': '图片美化失败'}), 500
         
+        # 获取图片分析结果
+        analysis_result = image_analyzer.analyze(filepath)
+        
         return jsonify({
             'success': True,
             'original': f"/uploads/{filename}",
-            'enhanced': f"/uploads/{os.path.basename(enhanced_path)}"
+            'enhanced': f"/uploads/{os.path.basename(enhanced_path)}",
+            'review': analysis_result.get("review", "无法生成评价"),
+            'features': analysis_result.get("features", "无法提取特征")
         })
         
     except ValueError:
@@ -89,7 +110,7 @@ def enhance_image():
         return jsonify({'error': '降噪值必须是0.6到1.0之间的数字'}), 400
     except Exception as e:
         logger.error(f"处理失败: {str(e)}")
-        return jsonify({'error': '图片美化失败'}), 500
+        return jsonify({'error': '图片处理失败'}), 500
 
 @app.route('/adjust', methods=['POST'])
 def adjust_image():
@@ -101,9 +122,14 @@ def adjust_image():
         return jsonify({'status': 'error', 'error': '没有提供图片路径'})
     
     try:
-        # 从URL路径获取实际文件路径
+        # 从URL路径获取实际文件路径，移除查询参数
+        image_path = image_path.split('?')[0]  # 移除查询参数
         filename = os.path.basename(image_path)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # 验证文件是否存在
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"找不到图片文件: {filepath}")
         
         # 验证降噪值范围
         if not 0.6 <= denoise_value <= 1.0:
@@ -121,6 +147,9 @@ def adjust_image():
             'enhanced_image': f"/uploads/{os.path.basename(enhanced_path)}?t={timestamp}"
         })
         
+    except FileNotFoundError as e:
+        logger.error(f"文件错误: {str(e)}")
+        return jsonify({'status': 'error', 'error': str(e)})
     except ValueError as e:
         logger.error(f"参数错误: {str(e)}")
         return jsonify({'status': 'error', 'error': str(e)})

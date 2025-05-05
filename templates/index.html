@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>儿童画增强系统</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
             --primary-color: #7AB89D;
@@ -18,39 +19,116 @@
             background-color: var(--light-bg);
             color: var(--text-color);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
         }
 
-        .container {
-            max-width: 800px;
+        .page {
+            min-height: 100vh;
+            width: 100vw;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background-color: var(--light-bg);
         }
 
-        h1 {
-            color: var(--primary-color);
-            font-weight: 600;
-            margin-bottom: 30px;
+        .page-content {
+            max-width: 1024px;
+            width: 100%;
+            position: relative;
+            background-color: white;
+            padding: 0;
+            border-radius: 20px;
+            overflow: visible;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+
+        .page-content::before {
+            content: "";
+            display: block;
+            padding-top: 75%; /* 4:3 比例 */
+        }
+
+        .page-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        #page1 .page-background {
+            background-image: url('/static/backgrounds/bg1.png');
+        }
+
+        #page2 .page-background {
+            background-image: url('/static/backgrounds/bg2.png');
+        }
+
+        #page3 .page-background {
+            background-image: url('/static/backgrounds/bg3.png');
+        }
+
+        .page-content-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%; /* 确保内容区域填满父容器 */
         }
 
         .card {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
             border: none;
             border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 25px;
-            background-color: var(--card-bg);
+            margin-top: 10px;
+        }
+
+        .page-title {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 2rem;
+            z-index: 1;
+            margin: 0;
+            padding: 0;
+        }
+
+        .card-body {
+            padding: 10px;
         }
 
         .card-title {
             color: var(--primary-color);
             font-weight: 600;
-            margin-bottom: 20px;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
         }
 
         .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
-            padding: 8px 20px;
-            border-radius: 8px;
+            padding: 15px 30px;
+            border-radius: 10px;
             font-weight: 500;
+            font-size: 1.2rem;
             transition: all 0.3s ease;
         }
 
@@ -60,167 +138,447 @@
             transform: translateY(-2px);
         }
 
-        .btn-primary:disabled {
-            background-color: #CCCCCC;
-            border-color: #CCCCCC;
+        .preview-container {
+            flex: 1;
+            display: flex;
+            gap: 30px;
         }
 
-        .preview-container {
-            max-width: 512px;
-            margin: 20px auto;
+        .preview-section {
+            flex: 1;
+            height: 100%;
+            background: url('/static/backgrounds/images.png') no-repeat center center;
+            background-size: contain;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .preview-section h6 {
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+            height: 40px; /* 为按钮图片设置固定高度 */
+        }
+
+        .preview-section h6 img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .preview-image-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            margin: 10px;
         }
 
         .preview-image {
-            max-width: 100%;
-            height: auto;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 30px;
         }
 
-        .loading {
+        .preview-loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             display: none;
-            text-align: center;
-            margin: 20px 0;
-            color: var(--primary-color);
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
         }
 
-        .slider-container {
-            max-width: 512px;
-            margin: 20px auto;
+        .preview-loading .spinner-border {
+            width: 5rem;
+            height: 5rem;
+            color: #B87F5F; /* 暖棕色 */
+            border-width: 0.4rem;
+        }
+
+        .review-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .review-section {
+            flex: 1;
+            background-color: #FFF8DC;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--text-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            overflow-y: auto; /* 只在评论区允许滚动 */
+        }
+
+        .features-section {
+            display: none; /* 隐藏特征分析部分 */
+        }
+
+        .form-control-lg {
+            font-size: 1.2rem;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .form-range {
+            height: 20px;
+            padding: 0;
         }
 
         .form-range::-webkit-slider-thumb {
             background: var(--primary-color);
+            width: 30px;
+            height: 30px;
         }
 
         .form-range::-moz-range-thumb {
             background: var(--primary-color);
+            width: 30px;
+            height: 30px;
         }
 
-        .form-select {
-            border-radius: 8px;
-            border: 1px solid #E0E0E0;
-            padding: 8px 12px;
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
 
-        .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(122, 184, 157, 0.25);
-        }
-
-        .form-control {
-            border-radius: 8px;
-            border: 1px solid #E0E0E0;
-            padding: 8px 12px;
-        }
-
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(122, 184, 157, 0.25);
-        }
-
-        .form-label {
-            color: var(--text-color);
-            font-weight: 500;
-            margin-bottom: 8px;
+        .loading-content {
+            text-align: center;
         }
 
         .spinner-border {
-            color: var(--primary-color);
+            width: 4rem;
+            height: 4rem;
         }
 
-        #animationPreview {
+        .page-nav {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 5px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            opacity: 0.5;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-dot.active {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            animation: bounce 2s infinite;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 15px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        /* 标题样式 */
+        .page-header {
+            width: 100%;
             text-align: center;
-            margin-top: 20px;
+            padding: 20px 0;
+            background: transparent;
         }
 
-        .preview-section {
-            background-color: #F8F9FA;
-            padding: 15px;
-            border-radius: 10px;
+        .page-header img {
+            height: 200px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        /* 第一页特殊处理，移除标题 */
+        #page1 .page-title {
+            display: none;
+        }
+
+        /* 上传区域样式 */
+        .upload-area {
+            position: relative;
+            width: 100%;
+            height: 300px; /* 降低高度到300px */
+            border: 2px dashed var(--primary-color);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
             margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
         }
 
-        .preview-section h6 {
+        .upload-area:hover {
+            background-color: rgba(122, 184, 157, 0.1);
+        }
+
+        .upload-placeholder {
+            text-align: center;
             color: var(--primary-color);
-            margin-bottom: 10px;
-            font-weight: 600;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+        }
+
+        .upload-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 10px;
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .upload-loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+        }
+
+        .upload-loading .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        .btn-upload {
+            width: auto;
+            min-width: 200px;
+            padding: 0;
+            margin: 0 auto;
+            display: block;
+            background: none;
+            border: none;
+        }
+
+        .btn-upload img {
+            width: 250px;
+            height: auto;
+            cursor: pointer;
+        }
+
+        .btn-upload:hover {
+            background: none;
+            transform: scale(1.05);
+            transition: transform 0.2s ease;
+        }
+
+        .slider-container {
+            padding: 5px;
+            margin-bottom: 5px;
+        }
+
+        .slider-container .form-label {
+            margin-bottom: 2px;
+            font-size: 1rem;
+        }
+
+        #denoiseValue {
+            font-size: 1rem;
+            margin-top: 2px;
+        }
+
+        #adjustButton {
+            padding: 5px 15px;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        #page2 .page-title {
+            display: none;
+        }
+
+        #page2 .page-content-inner {
+            padding-top: 60px; /* 为第二页的内容添加顶部内边距 */
+        }
+
+        #page2 .preview-container {
+            margin-top: 0;
         }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center mb-4">儿童画增强系统</h1>
-        
-        <!-- 上传区域 -->
-        <div class="row justify-content-center">
-            <div class="col-md-8">
+    <!-- 添加标题图片 -->
+    <div class="page-header">
+        <img src="/static/backgrounds/head.png" alt="儿童画增强系统">
+    </div>
+
+    <!-- 页面导航 -->
+    <div class="page-nav">
+        <div class="nav-dot active" data-page="1"></div>
+        <div class="nav-dot" data-page="2"></div>
+        <div class="nav-dot" data-page="3"></div>
+    </div>
+
+    <!-- 第一页：上传和AI点评 -->
+    <div class="page" id="page1">
+        <div class="page-content">
+            <div class="page-title">儿童画创作</div>
+            <div class="page-background"></div>
+            <div class="page-content-inner">
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">上传图片</h5>
                         <form id="uploadForm" enctype="multipart/form-data">
-                            <div class="mb-3">
+                            <div class="upload-area" id="uploadArea">
                                 <input type="file" class="form-control" id="imageInput" accept="image/*" required>
+                                <div class="upload-placeholder">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p class="fs-5">点击或拖拽图片到此处</p>
+                                </div>
+                                <img id="uploadPreview" class="upload-preview" alt="预览图">
+                                <div class="upload-loading">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">处理中...</span>
+                                    </div>
+                                </div>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">上传并美化</button>
+                            <button type="submit" class="btn btn-primary btn-upload">
+                                <img src="/static/buttons/upload.png" alt="上传并分析">
+                            </button>
                         </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 预览区域 -->
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="preview-container">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">预览</h5>
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="preview-section">
-                                        <h6>原图</h6>
-                                        <img id="originalPreview" class="preview-image" src="" alt="原图预览">
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="preview-section">
-                                        <h6>美化后</h6>
-                                        <img id="enhancedPreview" class="preview-image" src="" alt="美化预览">
-                                    </div>
-                                </div>
+                        
+                        <div class="review-container">
+                            <h5 class="card-title">艺术评论家的点评</h5>
+                            <div class="review-section" id="reviewSection">
+                                <i class="fas fa-comment-dots me-2"></i>等待您上传作品...
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="scroll-hint">向下滑动 ↓</div>
+    </div>
 
-        <!-- 参数调整区域 -->
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">参数调整</h5>
-                        <div class="slider-container">
-                            <label for="denoiseSlider" class="form-label">降噪强度: <span id="denoiseValue">0.6</span></label>
-                            <input type="range" class="form-range" id="denoiseSlider" min="0.6" max="1.0" step="0.01" value="0.6">
+    <!-- 第二页：美化和参数调整 -->
+    <div class="page" id="page2">
+        <div class="page-content">
+            <div class="page-title">智能美化</div>
+            <div class="page-background"></div>
+            <div class="page-content-inner">
+                <div class="preview-container">
+                    <div class="preview-section">
+                        <h6><img src="/static/buttons/before.png" alt="原图"></h6>
+                        <div class="preview-image-container">
+                            <img id="originalPreview" class="preview-image" src="" alt="原图预览">
                         </div>
-                        <button id="adjustButton" class="btn btn-primary w-100" disabled>应用调整</button>
+                    </div>
+                    <div class="preview-section">
+                        <h6><img src="/static/buttons/after.png" alt="美化后"></h6>
+                        <div class="preview-image-container">
+                            <img id="enhancedPreview" class="preview-image" src="" alt="美化预览">
+                            <div class="preview-loading">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">处理中...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">美化程度</h5>
+                        <div class="slider-container">
+                            <input type="range" class="form-range" id="denoiseSlider" min="0" max="100" value="60">
+                            <div class="text-center mt-3">
+                                <span id="denoiseValue" class="fs-4">60%</span>
+                            </div>
+                        </div>
+                        <button id="adjustButton" class="btn btn-primary w-100 mt-4" disabled>应用调整</button>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="scroll-hint">向下滑动 ↓</div>
+    </div>
 
-        <!-- 动画生成区域 -->
-        <div class="row justify-content-center">
-            <div class="col-md-8">
+    <!-- 第三页：动画生成 -->
+    <div class="page" id="page3">
+        <div class="page-content">
+            <div class="page-title">趣味动画</div>
+            <div class="page-background"></div>
+            <div class="page-content-inner">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">动画生成</h5>
-                        <div class="mb-3">
-                            <label class="form-label">选择动画动作：</label>
-                            <select id="animationAction" class="form-select">
+                        <div class="mb-4">
+                            <label class="form-label fs-4">选择动画动作：</label>
+                            <select id="animationAction" class="form-select form-select-lg mb-4">
                                 <option value="smile">微笑</option>
                                 <option value="wave">招手</option>
                                 <option value="dance">跳舞</option>
@@ -228,140 +586,256 @@
                                 <option value="jump">跳跃</option>
                                 <option value="spin">旋转</option>
                             </select>
+                            <button id="animateButton" class="btn btn-primary w-100" disabled>生成动画</button>
                         </div>
-                        <button id="animateButton" class="btn btn-primary w-100" disabled>生成动画</button>
-                        <div id="animationPreview" class="mt-3"></div>
+                        <div id="animationPreview" class="mt-5 text-center">
+                            <div class="preview-section">
+                                <h6>动画预览</h6>
+                                <!-- 动画预览将在这里显示 -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- 加载提示 -->
-        <div id="loading" class="loading">
-            <div class="spinner-border text-primary" role="status">
+    <!-- 加载提示 -->
+    <div class="loading">
+        <div class="loading-content">
+            <div class="spinner-border" role="status">
                 <span class="visually-hidden">处理中...</span>
             </div>
-            <p class="mt-2">正在处理，请稍候...</p>
+            <p class="mt-3 fs-4">正在处理您的图片，请稍候...</p>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let currentImage = null;
-        const loading = document.getElementById('loading');
-        const adjustButton = document.getElementById('adjustButton');
-        const animateButton = document.getElementById('animateButton');
-        const denoiseSlider = document.getElementById('denoiseSlider');
-        const denoiseValue = document.getElementById('denoiseValue');
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadForm = document.getElementById('uploadForm');
+            const uploadArea = document.getElementById('uploadArea');
+            const imageInput = document.getElementById('imageInput');
+            const uploadPreview = document.getElementById('uploadPreview');
+            const uploadPlaceholder = document.querySelector('.upload-placeholder');
+            const uploadLoading = document.querySelector('.upload-loading');
+            const originalPreview = document.getElementById('originalPreview');
+            const enhancedPreview = document.getElementById('enhancedPreview');
+            const loading = document.getElementById('loading');
+            const denoiseSlider = document.getElementById('denoiseSlider');
+            const denoiseValue = document.getElementById('denoiseValue');
+            const adjustButton = document.getElementById('adjustButton');
+            const reviewSection = document.getElementById('reviewSection');
+            const animateButton = document.getElementById('animateButton');
 
-        // 更新降噪值显示
-        denoiseSlider.addEventListener('input', function() {
-            denoiseValue.textContent = this.value;
-        });
+            // 点击上传区域触发文件选择
+            uploadArea.addEventListener('click', () => {
+                imageInput.click();
+            });
 
-        // 上传表单提交
-        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const fileInput = document.getElementById('imageInput');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                alert('请选择文件');
-                return;
-            }
+            // 处理拖拽上传
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#7AB89D';  // 使用具体的颜色值
+            });
 
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('denoise_value', denoiseSlider.value);
+            uploadArea.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '';
+            });
 
-            try {
-                loading.style.display = 'block';
-                const response = await fetch('/enhance', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('originalPreview').src = data.original;
-                    document.getElementById('enhancedPreview').src = data.enhanced;
-                    currentImage = data.original;
-                    adjustButton.disabled = false;
-                    animateButton.disabled = false;
-                } else {
-                    alert(data.error || '处理失败');
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '';
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    imageInput.files = files;
+                    handleFileSelect(files[0]);
                 }
-            } catch (error) {
-                alert('上传失败: ' + error.message);
-            } finally {
-                loading.style.display = 'none';
-            }
-        });
+            });
 
-        // 调整参数
-        adjustButton.addEventListener('click', async function() {
-            if (!currentImage) return;
-
-            try {
-                loading.style.display = 'block';
-                const response = await fetch('/adjust', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        image_path: currentImage,
-                        denoise_value: parseFloat(denoiseSlider.value)
-                    })
-                });
-
-                const data = await response.json();
-                if (data.status === 'success') {
-                    const timestamp = new Date().getTime();
-                    document.getElementById('enhancedPreview').src = `${data.enhanced_image}?t=${timestamp}`;
-                } else {
-                    alert(data.error || '调整失败');
+            // 处理文件选择
+            imageInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
                 }
-            } catch (error) {
-                alert('调整失败: ' + error.message);
-            } finally {
-                loading.style.display = 'none';
+            });
+
+            // 处理文件预览
+            function handleFileSelect(file) {
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        uploadPreview.src = e.target.result;
+                        uploadPreview.style.display = 'block';
+                        uploadPlaceholder.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                }
             }
-        });
 
-        // 生成动画
-        animateButton.addEventListener('click', async function() {
-            if (!currentImage) return;
+            // 处理参数调整
+            denoiseSlider.addEventListener('input', function() {
+                denoiseValue.textContent = this.value + '%';
+            });
 
-            try {
-                loading.style.display = 'block';
+            // 处理表单提交
+            uploadForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const file = imageInput.files[0];
+                if (!file) return;
+
                 const formData = new FormData();
-                
-                // 使用最新生成的图片（enhancedPreview）而不是原始图片
-                const enhancedImageUrl = document.getElementById('enhancedPreview').src;
-                const response = await fetch(enhancedImageUrl);
-                const blob = await response.blob();
-                const file = new File([blob], 'animation_input.png', { type: 'image/png' });
-                
                 formData.append('file', file);
-                formData.append('action', document.getElementById('animationAction').value);
+                const sliderValue = parseInt(denoiseSlider.value);
+                const denoise = 0.6 + (sliderValue / 100) * 0.4;
+                formData.append('denoise_value', denoise);
 
-                const response2 = await fetch('/animate', {
-                    method: 'POST',
-                    body: formData
-                });
+                uploadLoading.style.display = 'flex';
+                adjustButton.disabled = true;
+                animateButton.disabled = true;
 
-                const data = await response2.json();
-                if (data.success) {
-                    const animationPreview = document.getElementById('animationPreview');
-                    animationPreview.innerHTML = `<img src="${data.animation}" class="preview-image" alt="动画预览">`;
-                } else {
-                    alert(data.error || '动画生成失败');
+                try {
+                    const response = await fetch('/enhance', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        originalPreview.src = data.original + '?' + new Date().getTime();
+                        enhancedPreview.src = data.enhanced + '?' + new Date().getTime();
+                        adjustButton.disabled = false;
+                        animateButton.disabled = false;
+                        
+                        // 只显示评论，不显示特征
+                        reviewSection.innerHTML = `<i class="fas fa-comment-dots me-2"></i>${data.review}`;
+                    } else {
+                        alert('处理失败: ' + data.error);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('处理失败，请重试');
+                } finally {
+                    uploadLoading.style.display = 'none';
                 }
-            } catch (error) {
-                alert('动画生成失败: ' + error.message);
-            } finally {
-                loading.style.display = 'none';
+            });
+
+            // 处理参数调整
+            adjustButton.addEventListener('click', async function() {
+                const previewLoading = document.querySelector('.preview-loading');
+                previewLoading.style.display = 'flex';
+                adjustButton.disabled = true;
+                animateButton.disabled = true;
+
+                try {
+                    const sliderValue = parseInt(denoiseSlider.value);
+                    const denoise = 0.6 + (sliderValue / 100) * 0.4;
+
+                    // 创建一个FormData对象，与上传时相同的格式
+                    const formData = new FormData();
+                    
+                    // 从当前显示的原图获取文件
+                    const response = await fetch(originalPreview.src);
+                    const blob = await response.blob();
+                    formData.append('file', blob, 'image.png');
+                    formData.append('denoise_value', denoise);
+
+                    const enhanceResponse = await fetch('/enhance', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await enhanceResponse.json();
+                    if (data.success) {
+                        enhancedPreview.src = data.enhanced + '?' + new Date().getTime();
+                        animateButton.disabled = false;
+                    } else {
+                        alert('处理失败: ' + (data.error || '未知错误'));
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('处理失败，请重试');
+                } finally {
+                    previewLoading.style.display = 'none';
+                    adjustButton.disabled = false;
+                }
+            });
+
+            // 生成动画
+            animateButton.addEventListener('click', async function() {
+                if (!enhancedPreview.src) {
+                    alert('请先上传并美化图片');
+                    return;
+                }
+
+                try {
+                    loading.style.display = 'block';
+                    const formData = new FormData();
+                    
+                    // 使用美化后的图片（enhancedPreview）作为输入
+                    const response = await fetch(enhancedPreview.src);
+                    const blob = await response.blob();
+                    formData.append('file', new File([blob], 'animation_input.png', { type: 'image/png' }));
+                    formData.append('action', document.getElementById('animationAction').value);
+
+                    const animateResponse = await fetch('/animate', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await animateResponse.json();
+                    if (data.success) {
+                        const animationPreview = document.getElementById('animationPreview');
+                        animationPreview.innerHTML = `<img src="${data.animation}?${new Date().getTime()}" class="preview-image" alt="动画预览">`;
+                    } else {
+                        alert(data.error || '动画生成失败');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('动画生成失败: ' + error.message);
+                } finally {
+                    loading.style.display = 'none';
+                }
+            });
+
+            // 添加页面导航功能
+            const navDots = document.querySelectorAll('.nav-dot');
+            const pages = document.querySelectorAll('.page');
+
+            // 更新当前页面的导航点
+            function updateNavDots() {
+                const scrollPosition = window.scrollY;
+                const windowHeight = window.innerHeight;
+                
+                pages.forEach((page, index) => {
+                    const rect = page.getBoundingClientRect();
+                    if (rect.top <= windowHeight/2 && rect.bottom >= windowHeight/2) {
+                        navDots.forEach(dot => dot.classList.remove('active'));
+                        navDots[index].classList.add('active');
+                    }
+                });
             }
+
+            // 点击导航点滚动到对应页面
+            navDots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    pages[index].scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+
+            // 监听滚动事件
+            window.addEventListener('scroll', updateNavDots);
+
+            // 添加动画生成的加载指示器
+            const animationLoading = document.createElement('div');
+            animationLoading.className = 'preview-loading';
+            animationLoading.innerHTML = `
+                <div class="spinner-border" style="color: #B87F5F;" role="status">
+                    <span class="visually-hidden">生成中...</span>
+                </div>
+            `;
+            document.getElementById('animationPreview').appendChild(animationLoading);
         });
     </script>
 </body>
