@@ -573,6 +573,66 @@
             height: 50px;  /* 调整按钮大小 */
             width: auto;
         }
+
+        /* 动画加载状态样式 */
+        .animation-loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            color: var(--text-color);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .progress-container {
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .progress {
+            height: 10px;
+            background-color: #f3f3f3;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 确保预览容器有相对定位 */
+        #animationPreview.preview-image-container {
+            position: relative;
+            min-height: 200px;
+        }
     </style>
 </head>
 <body>
@@ -646,13 +706,13 @@
                 <div class="preview-container">
                     <div class="preview-section">
                         <div class="preview-image-container">
-                            <div class="preview-text">原图预览</div>
+                            <div class="preview-text"></div>
                             <img id="originalPreview" class="preview-image" src="" alt="">
                         </div>
                     </div>
                     <div class="preview-section">
                         <div class="preview-image-container">
-                            <div class="preview-text">美化预览</div>
+                            <div class="preview-text"></div>
                             <img id="enhancedPreview" class="preview-image" src="" alt="">
                             <div class="preview-loading">
                                 <div class="spinner-border" role="status">
@@ -666,13 +726,14 @@
                     <div class="card-body">
                         <h5 class="card-title">美化程度</h5>
                         <div class="slider-container">
-                            <input type="range" class="form-range" id="denoiseSlider" min="0" max="100" value="60">
+                            <input type="range" class="form-range" id="denoiseSlider" min="50" max="100" value="60">
                             <div class="text-center mt-3">
                                 <span id="denoiseValue" class="fs-4">60%</span>
                             </div>
                         </div>
                     </div>
                 </div>
+                
                 <button id="adjustButton" class="btn-adjust" disabled>
                     <img src="/static/buttons/apply.png" alt="应用调整" id="adjustButtonImg">
                 </button>
@@ -709,6 +770,16 @@
                         <div id="animationPreview" class="preview-image-container">
                             <!-- 动画预览将在这里显示 -->
                         </div>
+                            <!-- 添加动画加载状态容器 -->
+                            <div id="animationLoading" class="animation-loading" style="display: none;">
+                                <div class="loading-spinner"></div>
+                                <div class="loading-text">动态图片生成中，请耐心等待...</div>
+                                <div class="progress-container">
+                                    <div class="progress">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
                     </div>
                 </div>
             </div>
@@ -736,7 +807,7 @@
             const uploadLoading = document.querySelector('.upload-loading');
             const originalPreview = document.getElementById('originalPreview');
             const enhancedPreview = document.getElementById('enhancedPreview');
-            const loading = document.getElementById('loading');
+            const loading = document.querySelector('.loading');
             const denoiseSlider = document.getElementById('denoiseSlider');
             const denoiseValue = document.getElementById('denoiseValue');
             const adjustButton = document.getElementById('adjustButton');
@@ -745,6 +816,14 @@
             const uploadButtonImg = document.getElementById('uploadButtonImg');
             const adjustButtonImg = document.getElementById('adjustButtonImg');
             const animateButtonImg = document.getElementById('animateButtonImg');
+
+            // 检查评论区DOM元素是否存在
+            console.log('Review section exists:', !!reviewSection);
+            if (reviewSection) {
+                console.log('Initial review section content:', reviewSection.innerHTML);
+            } else {
+                console.error('Review section element not found!');
+            }
 
             // 点击上传区域触发文件选择
             uploadArea.addEventListener('click', () => {
@@ -784,9 +863,17 @@
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
+                        // 更新上传预览
                         uploadPreview.src = e.target.result;
                         uploadPreview.style.display = 'block';
                         uploadPlaceholder.style.display = 'none';
+                        
+                        // 同时更新第二页的原始图片预览
+                        originalPreview.src = e.target.result;
+                        originalPreview.style.display = 'block';
+                        
+                        // 启用调整按钮
+                        adjustButton.disabled = false;
                     };
                     reader.readAsDataURL(file);
                 }
@@ -803,10 +890,13 @@
                 const file = imageInput.files[0];
                 if (!file) return;
 
+                // 提交表单前，先更新评论状态为"正在生成评论"
+                reviewSection.innerHTML = `<i class="fas fa-comment-dots me-2"></i>正在生成评论...`;
+                
                 const formData = new FormData();
                 formData.append('file', file);
                 const sliderValue = parseInt(denoiseSlider.value);
-                const denoise = 0.6 + (sliderValue / 100) * 0.4;
+                const denoise = sliderValue / 100;  // 直接使用滑块值除以100
                 formData.append('denoise_value', denoise);
 
                 uploadLoading.style.display = 'flex';
@@ -814,6 +904,62 @@
                 animateButton.disabled = true;
                 uploadButtonImg.src = '/static/buttons/load.png';
 
+                // 保存临时文件路径用于评论生成
+                let originalFilePath = '';
+
+                // 1. 先处理评论生成
+                try {
+                    // 构造一个基于文件名的路径
+                    const imagePath = `/uploads/${encodeURIComponent(file.name)}`;
+                    
+                    console.log('Requesting review via generate_review endpoint...');
+                    const reviewResponse = await fetch('/generate_review', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            image_path: imagePath
+                        })
+                    });
+                    
+                    // 打印原始响应数据
+                    const responseText = await reviewResponse.text();
+                    console.log('Raw response text:', responseText);
+                    
+                    // 解析JSON并处理评论
+                    let reviewData;
+                    try {
+                        reviewData = JSON.parse(responseText);
+                        console.log('Parsed review data:', reviewData);
+                    } catch (e) {
+                        console.error('Error parsing JSON response:', e);
+                        reviewSection.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>评论解析失败`;
+                        return;
+                    }
+                    
+                    if (reviewData && reviewData.status === 'success' && reviewData.review) {
+                        // 直接使用后端格式化的HTML
+                        console.log('Setting review HTML:', reviewData.review);
+                        
+                        // 使用延迟确保DOM更新
+                        setTimeout(() => {
+                            reviewSection.innerHTML = reviewData.review;
+                            console.log('Review section after update:', reviewSection.innerHTML);
+                            
+                            // 确保评论区可见
+                            reviewSection.style.display = 'block';
+                        }, 100);
+                    } else {
+                        console.log('Review generation failed:', reviewData?.error || 'Unknown error');
+                        reviewSection.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>评论生成失败: ${reviewData?.error || '未知错误'}`;
+                    }
+                } catch (error) {
+                    console.error('Error generating review:', error);
+                    reviewSection.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>评论生成失败，请重试`;
+                }
+
+                // 2. 然后处理图片美化
                 try {
                     const response = await fetch('/enhance', {
                         method: 'POST',
@@ -821,27 +967,52 @@
                     });
 
                     const data = await response.json();
+                    console.log('Server response (enhance):', data);
+                    
                     if (data.success) {
-                        originalPreview.src = data.original + '?' + new Date().getTime();
-                        enhancedPreview.src = data.enhanced + '?' + new Date().getTime();
+                        // 更新第二页的预览图片
+                        console.log('Setting original image:', data.original);
+                        console.log('Setting enhanced image:', data.enhanced);
+                        
+                        const origImgUrl = data.original + '?' + new Date().getTime();
+                        const enhancedImgUrl = data.enhanced + '?' + new Date().getTime();
+                        
+                        // 预加载图片，确认它们可以正确加载
+                        const checkImageLoading = (url, description) => {
+                            const testImg = new Image();
+                            testImg.onload = () => console.log(`${description} image loaded successfully, dimensions: ${testImg.width}x${testImg.height}`);
+                            testImg.onerror = () => console.error(`Failed to load ${description} image from: ${url}`);
+                            testImg.src = url;
+                        };
+                        
+                        checkImageLoading(origImgUrl, 'Original');
+                        checkImageLoading(enhancedImgUrl, 'Enhanced');
+                        
+                        // 设置图片源并确保显示
+                        originalPreview.src = origImgUrl;
+                        originalPreview.style.display = 'block';
+                        originalPreview.onload = () => console.log('Original image displayed in DOM');
+                        originalPreview.onerror = () => console.error('Error displaying original image in DOM');
+                        
+                        enhancedPreview.src = enhancedImgUrl;
+                        enhancedPreview.style.display = 'block';
+                        enhancedPreview.onload = () => console.log('Enhanced image displayed in DOM');
+                        enhancedPreview.onerror = () => console.error('Error displaying enhanced image in DOM');
+                        
+                        // 启用按钮
                         adjustButton.disabled = false;
                         animateButton.disabled = false;
                         uploadButtonImg.src = '/static/buttons/upload.png';
                         
-                        // 如果是新上传的图片，显示评论
-                        if (data.review) {
-                            reviewSection.innerHTML = `<i class="fas fa-comment-dots me-2"></i>${data.review}`;
-                        } else {
-                            // 如果没有评论，说明是调整已有图片，保持当前评论不变
-                            console.log('保持当前评论不变');
-                        }
+                        // 保存原始图片路径
+                        originalFilePath = data.original;
                     } else {
-                        alert('处理失败: ' + data.error);
+                        alert('图片美化失败: ' + data.error);
                         uploadButtonImg.src = '/static/buttons/upload.png';
                     }
                 } catch (error) {
-                    console.error('Error:', error);
-                    alert('处理失败，请重试');
+                    console.error('Error in image enhancement:', error);
+                    alert('图片美化失败，请重试');
                     uploadButtonImg.src = '/static/buttons/upload.png';
                 } finally {
                     uploadLoading.style.display = 'none';
@@ -858,7 +1029,7 @@
 
                 try {
                     const sliderValue = parseInt(denoiseSlider.value);
-                    const denoise = 0.6 + (sliderValue / 100) * 0.4;
+                    const denoise = sliderValue / 100;  // 直接使用滑块值除以100
 
                     // 创建一个FormData对象，与上传时相同的格式
                     const formData = new FormData();
@@ -894,15 +1065,32 @@
 
             // 生成动画
             animateButton.addEventListener('click', async function() {
-                if (!enhancedPreview.src) {
+                if (!enhancedPreview || !enhancedPreview.src) {
                     alert('请先上传并美化图片');
                     return;
                 }
 
+                const animationPreview = document.getElementById('animationPreview');
+                const animationLoading = document.getElementById('animationLoading');
+                const progressBar = animationLoading.querySelector('.progress-bar');
+                
+                if (!animationLoading || !animationPreview) {
+                    console.error('Required elements not found');
+                    return;
+                }
+
                 try {
-                    loading.style.display = 'block';
+                    // 显示局部加载状态
+                    animationLoading.style.display = 'flex';
                     animateButton.disabled = true;
                     animateButtonImg.src = '/static/buttons/gend.png';
+                    
+                    // 启动进度条动画
+                    let progress = 0;
+                    const progressInterval = setInterval(() => {
+                        progress = Math.min(progress + 1, 90); // 最多到90%
+                        progressBar.style.width = `${progress}%`;
+                    }, 1000);
                     
                     const formData = new FormData();
                     
@@ -912,25 +1100,41 @@
                     formData.append('file', new File([blob], 'animation_input.png', { type: 'image/png' }));
                     formData.append('action', document.getElementById('animationAction').value);
 
+                    // 设置超时时间（10分钟）
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 600000);
+
                     const animateResponse = await fetch('/animate', {
                         method: 'POST',
-                        body: formData
+                        body: formData,
+                        signal: controller.signal
                     });
+
+                    clearTimeout(timeoutId);
 
                     const data = await animateResponse.json();
                     if (data.success) {
-                        const animationPreview = document.getElementById('animationPreview');
-                        animationPreview.innerHTML = `<img src="${data.animation}?${new Date().getTime()}" class="preview-image" alt="动画预览">`;
+                        // 完成进度条
+                        progressBar.style.width = '100%';
+                        setTimeout(() => {
+                            animationPreview.innerHTML = `<img src="${data.animation}?${new Date().getTime()}" class="preview-image" alt="动画预览">`;
+                            animationLoading.style.display = 'none';
+                            clearInterval(progressInterval);
+                        }, 500);
                     } else {
-                        alert(data.error || '动画生成失败');
-                        animateButtonImg.src = '/static/buttons/gen.png';
+                        throw new Error(data.error || '动画生成失败');
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('动画生成失败: ' + error.message);
+                    if (error.name === 'AbortError') {
+                        alert('动画生成超时，请重试');
+                    } else {
+                        alert('动画生成失败: ' + error.message);
+                    }
                     animateButtonImg.src = '/static/buttons/gen.png';
+                    animationLoading.style.display = 'none';
+                    clearInterval(progressInterval);
                 } finally {
-                    loading.style.display = 'none';
                     animateButton.disabled = false;
                 }
             });
@@ -962,16 +1166,6 @@
 
             // 监听滚动事件
             window.addEventListener('scroll', updateNavDots);
-
-            // 添加动画生成的加载指示器
-            const animationLoading = document.createElement('div');
-            animationLoading.className = 'preview-loading';
-            animationLoading.innerHTML = `
-                <div class="spinner-border" style="color: #B87F5F;" role="status">
-                    <span class="visually-hidden">生成中...</span>
-                </div>
-            `;
-            document.getElementById('animationPreview').appendChild(animationLoading);
         });
     </script>
 </body>

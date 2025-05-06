@@ -42,6 +42,7 @@ class PromptGenerationAgent:
 4. 为主体添加量词(a, one)确保生成单个角色
 5. 保持简洁清晰的描述
 6. 确保提示词间的关系合理
+7. 如果图片是黑白的，那么提示词中不需要出现black and white
 
 示例格式：
 a cute little girl, wearing blue dress, holding a teddy bear, standing in garden, soft lighting
