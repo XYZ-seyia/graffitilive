@@ -1,309 +1,262 @@
 {
-  "3": {
+  "141": {
     "inputs": {
-      "seed": 68869184221282,
-      "steps": 20,
+      "model_name": "umt5_xxl_fp16.safetensors",
+      "precision": "bf16",
+      "load_device": "offload_device",
+      "quantization": "disabled"
+    },
+    "class_type": "LoadWanVideoT5TextEncoder",
+    "_meta": {
+      "title": "Load WanVideo T5 TextEncoder"
+    }
+  },
+  "142": {
+    "inputs": {
+      "positive_prompt": [
+        "166",
+        0
+      ],
+      "negative_prompt": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+      "force_offload": true,
+      "t5": [
+        "141",
+        0
+      ]
+    },
+    "class_type": "WanVideoTextEncode",
+    "_meta": {
+      "title": "WanVideo TextEncode"
+    }
+  },
+  "143": {
+    "inputs": {
+      "model": "wan2.1_i2v_480p_14B_fp8_e4m3fn.safetensors",
+      "base_precision": "bf16",
+      "quantization": "fp8_e4m3fn",
+      "load_device": "offload_device",
+      "attention_mode": "sdpa",
+      "block_swap_args": [
+        "147",
+        0
+      ]
+    },
+    "class_type": "WanVideoModelLoader",
+    "_meta": {
+      "title": "WanVideo Model Loader"
+    }
+  },
+  "144": {
+    "inputs": {
+      "steps": 16,
       "cfg": 6,
-      "sampler_name": "uni_pc",
-      "scheduler": "simple",
-      "denoise": 1,
+      "shift": 5,
+      "seed": [
+        "164",
+        0
+      ],
+      "force_offload": true,
+      "scheduler": "dpm++",
+      "riflex_freq_index": 0,
+      "denoise_strength": 1,
+      "batched_cfg": false,
+      "rope_function": "comfy",
       "model": [
-        "54",
+        "143",
         0
       ],
-      "positive": [
-        "50",
+      "text_embeds": [
+        "142",
         0
       ],
-      "negative": [
-        "50",
-        1
-      ],
-      "latent_image": [
-        "50",
-        2
-      ]
-    },
-    "class_type": "KSampler",
-    "_meta": {
-      "title": "KSampler"
-    }
-  },
-  "6": {
-    "inputs": {
-      "text": "Dynamic cartoon character, winking, smiling, waving hands",
-      "clip": [
-        "38",
+      "image_embeds": [
+        "149",
         0
       ]
     },
-    "class_type": "CLIPTextEncode",
+    "class_type": "WanVideoSampler",
     "_meta": {
-      "title": "CLIP Text Encode (Positive Prompt)"
+      "title": "WanVideo Sampler"
     }
   },
-  "7": {
+  "145": {
     "inputs": {
-      "text": "Fast movement, chaotic, complex actions, harsh lighting, dark",
-      "clip": [
-        "38",
+      "enable_vae_tiling": true,
+      "tile_x": 272,
+      "tile_y": 272,
+      "tile_stride_x": 144,
+      "tile_stride_y": 128,
+      "vae": [
+        "146",
         0
-      ]
-    },
-    "class_type": "CLIPTextEncode",
-    "_meta": {
-      "title": "CLIP Text Encode (Negative Prompt)"
-    }
-  },
-  "8": {
-    "inputs": {
+      ],
       "samples": [
-        "3",
-        0
-      ],
-      "vae": [
-        "39",
+        "144",
         0
       ]
     },
-    "class_type": "VAEDecode",
+    "class_type": "WanVideoDecode",
     "_meta": {
-      "title": "VAE Decode"
+      "title": "WanVideo Decode"
     }
   },
-  "37": {
+  "146": {
     "inputs": {
-      "unet_name": "wan2.1_i2v_480p_14B_fp16.safetensors",
-      "weight_dtype": "default"
+      "model_name": "wan_2.1_vae.safetensors",
+      "precision": "bf16"
     },
-    "class_type": "UNETLoader",
+    "class_type": "WanVideoVAELoader",
     "_meta": {
-      "title": "Load Diffusion Model"
+      "title": "WanVideo VAE Loader"
     }
   },
-  "38": {
+  "147": {
     "inputs": {
-      "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-      "type": "wan",
-      "device": "default"
+      "blocks_to_swap": 20,
+      "offload_img_emb": false,
+      "offload_txt_emb": false,
+      "use_non_blocking": true,
+      "vace_blocks_to_swap": 0
     },
-    "class_type": "CLIPLoader",
+    "class_type": "WanVideoBlockSwap",
     "_meta": {
-      "title": "Load CLIP"
+      "title": "WanVideo BlockSwap"
     }
   },
-  "39": {
+  "149": {
     "inputs": {
-      "vae_name": "wan_2.1_vae.safetensors"
-    },
-    "class_type": "VAELoader",
-    "_meta": {
-      "title": "Load VAE"
-    }
-  },
-  "49": {
-    "inputs": {
-      "clip_name": "clip_vision_h.safetensors"
-    },
-    "class_type": "CLIPVisionLoader",
-    "_meta": {
-      "title": "Load CLIP Vision"
-    }
-  },
-  "50": {
-    "inputs": {
-      "width": [
-        "56",
+      "generation_width": [
+        "152",
+        3
+      ],
+      "generation_height": [
+        "152",
+        4
+      ],
+      "num_frames": [
+        "154",
         0
       ],
-      "height": [
-        "57",
-        0
-      ],
-      "length": 29,
-      "batch_size": 1,
-      "positive": [
-        "6",
-        0
-      ],
-      "negative": [
-        "7",
-        0
-      ],
-      "vae": [
-        "39",
-        0
-      ],
-      "clip_vision_output": [
-        "51",
-        0
-      ],
-      "start_image": [
-        "62",
-        0
-      ]
-    },
-    "class_type": "WanImageToVideo",
-    "_meta": {
-      "title": "WanImageToVideo"
-    }
-  },
-  "51": {
-    "inputs": {
-      "crop": "none",
+      "force_offload": true,
+      "noise_aug_strength": 0,
+      "latent_strength": 1,
+      "clip_embed_strength": 1,
+      "adjust_resolution": true,
       "clip_vision": [
-        "49",
+        "151",
         0
       ],
       "image": [
-        "62",
+        "150",
+        0
+      ],
+      "vae": [
+        "146",
         0
       ]
     },
-    "class_type": "CLIPVisionEncode",
+    "class_type": "WanVideoImageClipEncode",
     "_meta": {
-      "title": "CLIP Vision Encode"
+      "title": "WanVideo ImageClip Encode (Deprecated)"
     }
   },
-  "52": {
+  "150": {
     "inputs": {
-      "image": "",
-      "upload": "image"
+      "image": "ComfyUI_00002_.png"
     },
     "class_type": "LoadImage",
     "_meta": {
       "title": "Load Image"
     }
   },
-  "54": {
+  "151": {
     "inputs": {
-      "shift": 8,
-      "model": [
-        "37",
-        0
-      ]
+      "model_name": "open-clip-xlm-roberta-large-vit-huge-14_visual_fp16.safetensors",
+      "precision": "fp16",
+      "load_device": "offload_device"
     },
-    "class_type": "ModelSamplingSD3",
+    "class_type": "LoadWanVideoClipTextEncoder",
     "_meta": {
-      "title": "ModelSamplingSD3"
+      "title": "Load WanVideo Clip Encoder"
     }
   },
-  "55": {
+  "152": {
     "inputs": {
+      "aspect_ratio": "original",
+      "proportional_width": 1,
+      "proportional_height": 1,
+      "fit": "letterbox",
+      "method": "lanczos",
+      "round_to_multiple": "8",
+      "scale_to_side": "longest",
+      "scale_to_length": [
+        "163",
+        0
+      ],
+      "background_color": "#000000",
       "image": [
-        "52",
+        "150",
         0
       ]
     },
-    "class_type": "GetImageSize+",
+    "class_type": "LayerUtility: ImageScaleByAspectRatio V2",
     "_meta": {
-      "title": "🔧 Get Image Size"
+      "title": "LayerUtility: ImageScaleByAspectRatio V2"
     }
   },
-  "56": {
+  "154": {
     "inputs": {
-      "a": [
-        "55",
-        0
-      ],
-      "b": 3,
-      "operation": "divide"
+      "Number": "81"
     },
-    "class_type": "easy mathInt",
+    "class_type": "Int",
     "_meta": {
-      "title": "Math Int"
+      "title": "Int"
     }
   },
-  "57": {
+  "163": {
     "inputs": {
-      "a": [
-        "55",
-        1
-      ],
-      "b": 3,
-      "operation": "divide"
+      "Number": "360"
     },
-    "class_type": "easy mathInt",
+    "class_type": "Int",
     "_meta": {
-      "title": "Math Int"
+      "title": "Int"
     }
   },
-  "59": {
+  "164": {
+    "inputs": {
+      "seed": 774988268323439
+    },
+    "class_type": "Seed Everywhere",
+    "_meta": {
+      "title": "Seed Everywhere"
+    }
+  },
+  "166": {
+    "inputs": {
+      "string": "a cute little girl, walking, white background",
+      "strip_newlines": false
+    },
+    "class_type": "StringConstantMultiline",
+    "_meta": {
+      "title": "String Constant Multiline"
+    }
+  },
+  "168": {
     "inputs": {
       "frame_rate": 16,
       "loop_count": 0,
-      "filename_prefix": "ComfyUI",
+      "filename_prefix": "xiao",
       "format": "image/gif",
       "pingpong": false,
       "save_output": true,
       "images": [
-        "8",
+        "145",
         0
       ]
     },
     "class_type": "VHS_VideoCombine",
     "_meta": {
       "title": "Video Combine 🎥🅥🅗🅢"
-    }
-  },
-  "60": {
-    "inputs": {
-      "preview": "",
-      "source": [
-        "56",
-        0
-      ]
-    },
-    "class_type": "PreviewAny",
-    "_meta": {
-      "title": "Preview Any"
-    }
-  },
-  "61": {
-    "inputs": {
-      "preview": "",
-      "source": [
-        "57",
-        0
-      ]
-    },
-    "class_type": "PreviewAny",
-    "_meta": {
-      "title": "Preview Any"
-    }
-  },
-  "62": {
-    "inputs": {
-      "upscale_method": "nearest-exact",
-      "width": [
-        "56",
-        0
-      ],
-      "height": [
-        "57",
-        0
-      ],
-      "crop": "disabled",
-      "image": [
-        "52",
-        0
-      ]
-    },
-    "class_type": "ImageScale",
-    "_meta": {
-      "title": "Upscale Image"
-    }
-  },
-  "63": {
-    "inputs": {
-      "images": [
-        "62",
-        0
-      ]
-    },
-    "class_type": "PreviewImage",
-    "_meta": {
-      "title": "Preview Image"
     }
   }
 }

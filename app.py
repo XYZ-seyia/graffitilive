@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory, render_template
 import os
 from werkzeug.utils import secure_filename
-from agents.image_analysis_agent import ImageAnalysisAgent
+from agents.task_coordinator import TaskCoordinator
 from services.comfyui_service import ComfyUIService
 import logging
 import requests
@@ -18,8 +18,8 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-limit
 # 确保上传目录存在
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# 初始化服务
-image_analyzer = ImageAnalysisAgent()
+# 初始化服务和代理
+task_coordinator = TaskCoordinator()
 comfyui_service = ComfyUIService("http://localhost:8188")
 
 def allowed_file(filename):
@@ -47,19 +47,29 @@ def analyze_image():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
         
-        # 获取图片分析结果
-        result = image_analyzer.analyze(filepath)
+        logger.info(f"开始分析图片: {filepath}")
         
-        if result["status"] == "error":
+        # 使用任务协调器处理图片
+        result = task_coordinator.process_image(filepath)
+        
+        if result.get("status") == "error":
+            logger.error(f"图片处理失败: {result.get('error')}")
             return jsonify({
-                'error': '图片分析失败',
-                'details': result["error"]
+                'error': '处理失败',
+                'details': result.get("error")
             }), 500
+        
+        # 检查评论是否生成成功
+        if result["review"]["status"] == "error":
+            logger.error(f"评论生成失败: {result['review']['error']}")
+        else:
+            logger.info("评论生成成功")
+            logger.debug(f"评论内容: {result['review']['content']}")
         
         return jsonify({
             'success': True,
-            'review': result["review"],
-            'features': result["features"],
+            'review': result["review"]["content"],
+            'analysis': result["analysis"],
             'image_path': f"/uploads/{filename}"
         })
         
@@ -94,16 +104,34 @@ def enhance_image():
         if not enhanced_path:
             return jsonify({'error': '图片美化失败'}), 500
         
-        # 获取图片分析结果
-        analysis_result = image_analyzer.analyze(filepath)
+        # 检查是否是新上传的图片还是调整已有图片
+        is_new_upload = 'image.png' not in filename
         
-        return jsonify({
+        response_data = {
             'success': True,
             'original': f"/uploads/{filename}",
-            'enhanced': f"/uploads/{os.path.basename(enhanced_path)}",
-            'review': analysis_result.get("review", "无法生成评价"),
-            'features': analysis_result.get("features", "无法提取特征")
-        })
+            'enhanced': f"/uploads/{os.path.basename(enhanced_path)}"
+        }
+        
+        # 只有新上传的图片才进行分析和评论
+        if is_new_upload:
+            logger.info(f"开始处理新上传的图片: {filepath}")
+            # 使用任务协调器处理图片
+            result = task_coordinator.process_image(filepath)
+            if result.get("status") == "success":
+                if result["review"]["status"] == "success":
+                    response_data['review'] = result["review"]["content"]
+                    logger.info("评论生成成功")
+                    logger.debug(f"评论内容: {result['review']['content']}")
+                else:
+                    logger.error(f"评论生成失败: {result['review']['error']}")
+                    response_data['error'] = "评论生成失败"
+                response_data['analysis'] = result["analysis"]
+            else:
+                response_data['error'] = "图片分析失败"
+                logger.error(f"图片分析失败: {result.get('error')}")
+        
+        return jsonify(response_data)
         
     except ValueError:
         logger.error("降噪值格式错误")
@@ -111,6 +139,37 @@ def enhance_image():
     except Exception as e:
         logger.error(f"处理失败: {str(e)}")
         return jsonify({'error': '图片处理失败'}), 500
+
+@app.route('/get_review/<filename>')
+def get_review(filename):
+    """获取图片的艺术评论"""
+    try:
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if not os.path.exists(filepath):
+            return jsonify({'error': '图片不存在'}), 404
+        
+        logger.info(f"开始获取图片评论: {filepath}")
+        result = task_coordinator.process_image(filepath)
+        
+        if result.get("status") == "success":
+            if result["review"]["status"] == "success":
+                logger.info("评论获取成功")
+                return jsonify({
+                    'success': True,
+                    'review': result["review"]["content"]
+                })
+            else:
+                error_msg = f"评论生成失败: {result['review']['error']}"
+                logger.error(error_msg)
+                return jsonify({'error': error_msg}), 500
+        else:
+            error_msg = f"图片分析失败: {result.get('error')}"
+            logger.error(error_msg)
+            return jsonify({'error': error_msg}), 500
+            
+    except Exception as e:
+        logger.error(f"获取评论失败: {str(e)}")
+        return jsonify({'error': '获取评论失败'}), 500
 
 @app.route('/adjust', methods=['POST'])
 def adjust_image():
@@ -197,6 +256,7 @@ def animate_image():
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
+    """提供上传文件的访问"""
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':

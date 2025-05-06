@@ -27,7 +27,7 @@
         .page {
             min-height: 100vh;
             width: 100vw;
-            padding: 20px;
+            padding: 0px 20px 20px 20px;  /* 上 右 下 左 内边距 */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -87,7 +87,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            height: 100%; /* 确保内容区域填满父容器 */
+            height: 100%;
         }
 
         .card {
@@ -101,14 +101,15 @@
 
         .page-title {
             position: absolute;
-            top: -40px;
+            top: -60px;  /* 调整到更靠近内容 */
             left: 0;
             color: var(--primary-color);
-            font-weight: 600;
-            font-size: 2rem;
+            font-weight: 700;  /* 增加字重 */
+            font-size: 2.5rem;  /* 增加字体大小 */
             z-index: 1;
             margin: 0;
             padding: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);  /* 添加轻微阴影提升视觉效果 */
         }
 
         .card-body {
@@ -119,7 +120,7 @@
             color: var(--primary-color);
             font-weight: 600;
             font-size: 1.2rem;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .btn-primary {
@@ -141,20 +142,23 @@
         .preview-container {
             flex: 1;
             display: flex;
-            gap: 30px;
+            gap: 20px;  /* 减小间距 */
+            padding: 0 20px;  /* 添加左右内边距 */
+            width: 100%;
         }
 
         .preview-section {
             flex: 1;
             height: 100%;
-            background: url('/static/backgrounds/images.png') no-repeat center center;
-            background-size: contain;
+            background: url('/static/backgrounds/images.png') no-repeat;
+            background-size: 100% 100%;
             padding: 20px;
             border-radius: 15px;
             text-align: center;
             display: flex;
             flex-direction: column;
             position: relative;
+            box-shadow: 0 4px 6px rgba(139, 109, 76, 0.1);
         }
 
         .preview-section h6 {
@@ -171,10 +175,13 @@
         }
 
         .preview-image-container {
-            flex: 1;
             position: relative;
+            width: 100%;
+            min-height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             overflow: hidden;
-            margin: 10px;
         }
 
         .preview-image {
@@ -184,7 +191,7 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
-            padding: 30px;
+            padding: 10px;  /* 减小内边距 */
         }
 
         .preview-loading {
@@ -237,20 +244,44 @@
         }
 
         .form-range {
-            height: 20px;
+            height: 8px;
             padding: 0;
+            background: transparent;
+        }
+
+        .form-range::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            background: #B87F5F;
+            border-radius: 4px;
         }
 
         .form-range::-webkit-slider-thumb {
-            background: var(--primary-color);
-            width: 30px;
-            height: 30px;
+            -webkit-appearance: none;
+            width: 40px;
+            height: 40px;
+            background: url('/static/buttons/drag.png') no-repeat center center;
+            background-size: contain;
+            border: none;
+            margin-top: -16px;  /* (40px - 8px) / 2 = 16px，使滑块垂直居中 */
+            cursor: pointer;
+        }
+
+        .form-range::-moz-range-track {
+            width: 100%;
+            height: 8px;
+            background: #B87F5F;
+            border-radius: 4px;
         }
 
         .form-range::-moz-range-thumb {
-            background: var(--primary-color);
-            width: 30px;
-            height: 30px;
+            width: 40px;
+            height: 40px;
+            background: url('/static/buttons/drag.png') no-repeat center center;
+            background-size: contain;
+            border: none;
+            margin-top: -16px;
+            cursor: pointer;
         }
 
         .loading {
@@ -336,19 +367,24 @@
         .page-header {
             width: 100%;
             text-align: center;
-            padding: 20px 0;
+            padding: 10px 0;
             background: transparent;
+            margin-bottom: 10px;
+            max-width: 1000px;  /* 限制最大宽度 */
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .page-header img {
-            height: 200px;
-            width: auto;
+            width: 80%;  /* 使用百分比宽度 */
+            max-width: 1000px;  /* 限制最大宽度 */
+            height: auto;  /* 高度自动调整以保持比例 */
             object-fit: contain;
         }
 
-        /* 第一页特殊处理，移除标题 */
-        #page1 .page-title {
-            display: none;
+        /* 第一页特殊处理 */
+        #page1 .page-header {
+            margin-bottom: 30px;
         }
 
         /* 上传区域样式 */
@@ -416,59 +452,126 @@
             display: none;
         }
 
-        .btn-upload {
+        /* 统一按钮基础样式 */
+        .btn-upload,
+        .btn-adjust,
+        .btn-animate {
             width: auto;
-            min-width: 200px;
+            min-width: 180px;
             padding: 0;
             margin: 0 auto;
             display: block;
-            background: none;
-            border: none;
+            background: none !important;
+            border: none !important;
+            outline: none !important;
+            opacity: 1 !important;
+            transition: transform 0.2s ease;  /* 添加过渡效果 */
         }
 
-        .btn-upload img {
-            width: 250px;
+        /* 统一按钮图片样式 */
+        .btn-upload img,
+        .btn-adjust img,
+        .btn-animate img {
+            width: 200px;
             height: auto;
             cursor: pointer;
+            opacity: 1 !important;
         }
 
-        .btn-upload:hover {
-            background: none;
+        /* 调整第一页按钮大小 */
+        .btn-upload img {
+            width: 270px;  /* 更大的宽度 */
+        }
+
+        /* 特别调整第二页按钮大小 */
+        .btn-adjust img {
+            width: 160px;  /* 更小的宽度 */
+        }
+
+        .btn-upload:hover,
+        .btn-adjust:hover,
+        .btn-animate:hover {
             transform: scale(1.05);
-            transition: transform 0.2s ease;
         }
 
-        .slider-container {
-            padding: 5px;
-            margin-bottom: 5px;
+        /* 确保禁用状态下也有透明度 */
+        .btn-upload:disabled,
+        .btn-adjust:disabled,
+        .btn-animate:disabled {
+            opacity: 1 !important;
+            cursor: not-allowed;
         }
 
-        .slider-container .form-label {
-            margin-bottom: 2px;
-            font-size: 1rem;
+        /* 移除其他可能影响按钮样式的规则 */
+        .btn-primary,
+        .btn-primary:hover,
+        .btn-primary:active,
+        .btn-primary:focus {
+            background: none !important;
+            border: none !important;
+            box-shadow: none !important;
         }
 
-        #denoiseValue {
-            font-size: 1rem;
-            margin-top: 2px;
-        }
-
-        #adjustButton {
-            padding: 5px 15px;
-            margin-top: 5px;
-            font-size: 0.9rem;
-        }
-
-        #page2 .page-title {
-            display: none;
-        }
-
+        /* 第二页内容调整 */
         #page2 .page-content-inner {
-            padding-top: 60px; /* 为第二页的内容添加顶部内边距 */
+            padding-top: 30px;
         }
 
         #page2 .preview-container {
-            margin-top: 0;
+            margin-bottom: 30px;  /* 增加与下方卡片的间距 */
+        }
+
+        #page2 .card {
+            width: calc(100% - 40px);  /* 减去左右各20px的内边距 */
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+        /* 调整按钮位置 */
+        #adjustButton {
+            margin-top: 30px;  /* 增加与卡片的间距 */
+        }
+
+        /* 调整第三页的预览图片样式 */
+        #animationPreview img {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+        }
+
+        /* 调整选择框样式 */
+        #animationAction {
+            font-size: 1.1rem;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--primary-color);
+            color: var(--text-color);
+            background-color: white;
+            margin-bottom: 20px;
+        }
+
+        #animationAction:focus {
+            border-color: var(--primary-hover);
+            box-shadow: 0 0 0 0.2rem rgba(122, 184, 157, 0.25);
+        }
+
+        /* 添加预览按钮容器样式 */
+        .preview-buttons {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20%;  /* 控制两个按钮之间的距离 */
+            margin-bottom: 10px;  /* 与预览容器的间距 */
+        }
+
+        .before-button,
+        .after-button {
+            text-align: center;
+        }
+
+        .before-button img,
+        .after-button img {
+            height: 50px;  /* 调整按钮大小 */
+            width: auto;
         }
     </style>
 </head>
@@ -509,7 +612,7 @@
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-primary btn-upload">
-                                <img src="/static/buttons/upload.png" alt="上传并分析">
+                                <img src="/static/buttons/upload.png" alt="上传并分析" id="uploadButtonImg">
                             </button>
                         </form>
                         
@@ -532,17 +635,25 @@
             <div class="page-title">智能美化</div>
             <div class="page-background"></div>
             <div class="page-content-inner">
+                <div class="preview-buttons">
+                    <div class="before-button">
+                        <img src="/static/buttons/before.png" alt="原图">
+                    </div>
+                    <div class="after-button">
+                        <img src="/static/buttons/after.png" alt="美化后">
+                    </div>
+                </div>
                 <div class="preview-container">
                     <div class="preview-section">
-                        <h6><img src="/static/buttons/before.png" alt="原图"></h6>
                         <div class="preview-image-container">
-                            <img id="originalPreview" class="preview-image" src="" alt="原图预览">
+                            <div class="preview-text">原图预览</div>
+                            <img id="originalPreview" class="preview-image" src="" alt="">
                         </div>
                     </div>
                     <div class="preview-section">
-                        <h6><img src="/static/buttons/after.png" alt="美化后"></h6>
                         <div class="preview-image-container">
-                            <img id="enhancedPreview" class="preview-image" src="" alt="美化预览">
+                            <div class="preview-text">美化预览</div>
+                            <img id="enhancedPreview" class="preview-image" src="" alt="">
                             <div class="preview-loading">
                                 <div class="spinner-border" role="status">
                                     <span class="visually-hidden">处理中...</span>
@@ -551,7 +662,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="card mt-4">
+                <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">美化程度</h5>
                         <div class="slider-container">
@@ -560,9 +671,11 @@
                                 <span id="denoiseValue" class="fs-4">60%</span>
                             </div>
                         </div>
-                        <button id="adjustButton" class="btn btn-primary w-100 mt-4" disabled>应用调整</button>
                     </div>
                 </div>
+                <button id="adjustButton" class="btn-adjust" disabled>
+                    <img src="/static/buttons/apply.png" alt="应用调整" id="adjustButtonImg">
+                </button>
             </div>
         </div>
         <div class="scroll-hint">向下滑动 ↓</div>
@@ -576,23 +689,25 @@
             <div class="page-content-inner">
                 <div class="card">
                     <div class="card-body">
-                        <div class="mb-4">
-                            <label class="form-label fs-4">选择动画动作：</label>
-                            <select id="animationAction" class="form-select form-select-lg mb-4">
-                                <option value="smile">微笑</option>
-                                <option value="wave">招手</option>
-                                <option value="dance">跳舞</option>
-                                <option value="walk">走路</option>
-                                <option value="jump">跳跃</option>
-                                <option value="spin">旋转</option>
-                            </select>
-                            <button id="animateButton" class="btn btn-primary w-100" disabled>生成动画</button>
-                        </div>
-                        <div id="animationPreview" class="mt-5 text-center">
-                            <div class="preview-section">
-                                <h6>动画预览</h6>
-                                <!-- 动画预览将在这里显示 -->
-                            </div>
+                        <h5 class="card-title">选择动画动作</h5>
+                        <select id="animationAction" class="form-select form-select-lg mb-4">
+                            <option value="smile">微笑</option>
+                            <option value="wave">招手</option>
+                            <option value="dance">跳舞</option>
+                            <option value="walk">走路</option>
+                            <option value="jump">跳跃</option>
+                            <option value="spin">旋转</option>
+                        </select>
+                        <button id="animateButton" class="btn-animate" disabled>
+                            <img src="/static/buttons/gen.png" alt="生成动画" id="animateButtonImg">
+                        </button>
+                    </div>
+                </div>
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">动画预览</h5>
+                        <div id="animationPreview" class="preview-image-container">
+                            <!-- 动画预览将在这里显示 -->
                         </div>
                     </div>
                 </div>
@@ -627,6 +742,9 @@
             const adjustButton = document.getElementById('adjustButton');
             const reviewSection = document.getElementById('reviewSection');
             const animateButton = document.getElementById('animateButton');
+            const uploadButtonImg = document.getElementById('uploadButtonImg');
+            const adjustButtonImg = document.getElementById('adjustButtonImg');
+            const animateButtonImg = document.getElementById('animateButtonImg');
 
             // 点击上传区域触发文件选择
             uploadArea.addEventListener('click', () => {
@@ -694,6 +812,7 @@
                 uploadLoading.style.display = 'flex';
                 adjustButton.disabled = true;
                 animateButton.disabled = true;
+                uploadButtonImg.src = '/static/buttons/load.png';
 
                 try {
                     const response = await fetch('/enhance', {
@@ -707,15 +826,23 @@
                         enhancedPreview.src = data.enhanced + '?' + new Date().getTime();
                         adjustButton.disabled = false;
                         animateButton.disabled = false;
+                        uploadButtonImg.src = '/static/buttons/upload.png';
                         
-                        // 只显示评论，不显示特征
-                        reviewSection.innerHTML = `<i class="fas fa-comment-dots me-2"></i>${data.review}`;
+                        // 如果是新上传的图片，显示评论
+                        if (data.review) {
+                            reviewSection.innerHTML = `<i class="fas fa-comment-dots me-2"></i>${data.review}`;
+                        } else {
+                            // 如果没有评论，说明是调整已有图片，保持当前评论不变
+                            console.log('保持当前评论不变');
+                        }
                     } else {
                         alert('处理失败: ' + data.error);
+                        uploadButtonImg.src = '/static/buttons/upload.png';
                     }
                 } catch (error) {
                     console.error('Error:', error);
                     alert('处理失败，请重试');
+                    uploadButtonImg.src = '/static/buttons/upload.png';
                 } finally {
                     uploadLoading.style.display = 'none';
                 }
@@ -727,6 +854,7 @@
                 previewLoading.style.display = 'flex';
                 adjustButton.disabled = true;
                 animateButton.disabled = true;
+                adjustButtonImg.src = '/static/buttons/applied.png';
 
                 try {
                     const sliderValue = parseInt(denoiseSlider.value);
@@ -752,10 +880,12 @@
                         animateButton.disabled = false;
                     } else {
                         alert('处理失败: ' + (data.error || '未知错误'));
+                        adjustButtonImg.src = '/static/buttons/apply.png';
                     }
                 } catch (error) {
                     console.error('Error:', error);
                     alert('处理失败，请重试');
+                    adjustButtonImg.src = '/static/buttons/apply.png';
                 } finally {
                     previewLoading.style.display = 'none';
                     adjustButton.disabled = false;
@@ -771,6 +901,9 @@
 
                 try {
                     loading.style.display = 'block';
+                    animateButton.disabled = true;
+                    animateButtonImg.src = '/static/buttons/gend.png';
+                    
                     const formData = new FormData();
                     
                     // 使用美化后的图片（enhancedPreview）作为输入
@@ -790,12 +923,15 @@
                         animationPreview.innerHTML = `<img src="${data.animation}?${new Date().getTime()}" class="preview-image" alt="动画预览">`;
                     } else {
                         alert(data.error || '动画生成失败');
+                        animateButtonImg.src = '/static/buttons/gen.png';
                     }
                 } catch (error) {
                     console.error('Error:', error);
                     alert('动画生成失败: ' + error.message);
+                    animateButtonImg.src = '/static/buttons/gen.png';
                 } finally {
                     loading.style.display = 'none';
+                    animateButton.disabled = false;
                 }
             });
 

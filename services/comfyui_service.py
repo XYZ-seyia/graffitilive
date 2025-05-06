@@ -7,7 +7,7 @@ import io
 import time
 import traceback
 import shutil
-from agents.image_analysis_agent import ImageAnalysisAgent
+from agents.task_coordinator import TaskCoordinator
 
 logger = logging.getLogger(__name__)
 # Set default logging level to INFO
@@ -21,6 +21,9 @@ class ComfyUIService:
         # 获取 ComfyUI 根目录
         self.comfyui_root = r"C:\pinokio\api\comfyui.git\app"
         self.comfyui_input_dir = os.path.join(self.comfyui_root, 'input')
+        
+        # 初始化任务协调器
+        self.task_coordinator = TaskCoordinator()
         
         # 确保输入目录存在
         if not os.path.exists(self.comfyui_input_dir):
@@ -57,18 +60,20 @@ class ComfyUIService:
             
             original_filename = os.path.basename(image_path)
             
-            # 使用新的图像分析代理
-            analyzer = ImageAnalysisAgent()
-            analysis_result = analyzer.extract_features(image_path)
+            # 使用任务协调器处理图片
+            result = self.task_coordinator.process_image(image_path)
+            if result.get("status") == "error":
+                raise Exception(f"图片处理失败: {result.get('error')}")
             
-            if analysis_result["status"] == "success":
-                features = analysis_result["features"]
-                enhancement_prompt = f"Children's drawing, {features}, cute, simple lines, bright colors"
-            else:
-                enhancement_prompt = "Children's drawing, cute, simple lines, bright colors"
-                
-            positive_prompt = enhancement_prompt
-            negative_prompt = "bad hands, text, watermark, low quality, blurry, malformed, abnormal"
+            # 获取提示词
+            positive_prompt = result["prompts"]["positive_prompt"]
+            negative_prompt = result["prompts"]["negative_prompt"]
+            
+            # 输出提示词
+            print("\n=== 图片美化提示词 ===")
+            print(f"正面提示词: {positive_prompt}")
+            print(f"负面提示词: {negative_prompt}")
+            print("=====================\n")
             
             logger.debug(f"正面提示词: {positive_prompt}")
             logger.debug(f"负面提示词: {negative_prompt}")
@@ -171,64 +176,49 @@ class ComfyUIService:
             
             # 动作提示词配置
             action_prompts = {
-                'smile': {
-                    'positive': "gentle smile, happy expression, subtle facial movement, soft animation, children's animation style",
-                    'negative': "exaggerated smile, fast movement, complex facial expressions, realistic style"
-                },
-                'wave': {
-                    'positive': "gentle hand wave, friendly gesture, smooth arm movement, children's animation style",
-                    'negative': "fast movement, complex hand gestures, realistic style, multiple hands"
-                },
-                'dance': {
-                    'positive': "playful dance, gentle movement, happy expression, children's animation style, simple dance steps",
-                    'negative': "complex dance moves, fast movement, realistic style, professional dance"
-                },
-                'walk': {
-                    'positive': "gentle walking, cute movement, happy expression, children's animation style, simple steps",
-                    'negative': "fast walking, complex movement, realistic style, running"
-                },
-                'jump': {
-                    'positive': "cute jump, gentle bounce, happy expression, children's animation style, simple movement",
-                    'negative': "high jump, complex movement, realistic style, multiple jumps"
-                },
-                'spin': {
-                    'positive': "gentle spin, cute rotation, happy expression, children's animation style, simple movement",
-                    'negative': "fast spin, complex movement, realistic style, multiple rotations"
-                }
+                'smile': "a cute little girl, smiling, white background",
+                'wave': "a cute little girl, waving hands, white background",
+                'dance': "a cute little girl, dancing, white background",
+                'walk': "a cute little girl, walking, white background",
+                'jump': "a cute little girl, jumping, white background",
+                'spin': "a cute little girl, spinning, white background"
             }
             
-            prompts = action_prompts.get(action, action_prompts['smile'])
-            positive_prompt = prompts['positive']
-            negative_prompt = prompts['negative']
-            
-            logger.debug(f"动作: {action}")
-            logger.debug(f"正面提示词: {positive_prompt}")
-            logger.debug(f"负面提示词: {negative_prompt}")
-            
+            # 加载动画工作流
             workflow = self._load_workflow('animation_workflow.json')
             
-            workflow["52"]["inputs"]["image"] = input_filename
-            workflow["52"]["inputs"]["upload"] = "image"
-            workflow["52"]["inputs"]["directory"] = "input"
-            workflow["6"]["inputs"]["text"] = positive_prompt
-            workflow["7"]["inputs"]["text"] = negative_prompt
+            # 更新工作流配置
+            workflow["150"]["inputs"]["image"] = input_filename
+            workflow["166"]["inputs"]["string"] = action_prompts.get(action, action_prompts['smile'])
             
+            # 发送工作流到队列
             prompt_id = self._queue_prompt(workflow)
             if not prompt_id:
                 raise Exception("无法将工作流加入队列")
             
-            output = self._wait_for_output(prompt_id)
+            # 等待处理完成
+            output = self._wait_for_output(prompt_id, timeout=600)  # 增加超时时间到10分钟
             if not output:
                 raise Exception("工作流处理失败或超时")
             
-            output_path = os.path.join('uploads', f"animation_{input_filename[:-4]}.gif")
+            # 保存生成的动画
+            output_filename = f"animated_{os.path.splitext(input_filename)[0]}.gif"
+            output_path = os.path.join('uploads', output_filename)
             self._save_output(output, output_path)
+            
+            # 清理临时文件
+            try:
+                os.remove(comfyui_input_path)
+                logger.debug("已清理临时文件")
+            except Exception as e:
+                logger.debug(f"清理临时文件失败: {str(e)}")
             
             logger.info("动画生成完成")
             return output_path
             
         except Exception as e:
             logger.error(f"动画生成失败: {str(e)}")
+            logger.error(traceback.format_exc())
             return None
     
     def _load_workflow(self, workflow_name):
@@ -294,72 +284,87 @@ class ComfyUIService:
             logger.error(f"发送工作流失败: {str(e)}")
             return None
     
-    def _wait_for_output(self, prompt_id, timeout=300):
-        """等待工作流处理完成并获取输出"""
-        start_time = time.time()
-        logger.debug(f"等待工作流处理完成，ID: {prompt_id}")
-        
-        while time.time() - start_time < timeout:
-            try:
-                response = requests.get(f"{self.comfyui_url}/history/{prompt_id}")
+    def _wait_for_output(self, prompt_id, timeout=600):
+        """等待工作流执行完成并获取输出"""
+        try:
+            start_time = time.time()
+            while True:
+                if time.time() - start_time > timeout:
+                    raise Exception("等待输出超时")
+
+                # 检查历史记录
+                history_url = f"{self.comfyui_url}/history"
+                response = requests.get(history_url)
                 if response.status_code != 200:
-                    logger.debug(f"获取工作流状态失败: {response.status_code}")
-                    time.sleep(1)
-                    continue
-                
+                    raise Exception(f"获取历史记录失败: {response.status_code}")
+
                 history = response.json()
                 if prompt_id in history:
-                    prompt_data = history[prompt_id]
+                    prompt_info = history[prompt_id]
                     
-                    if prompt_data.get("outputs"):
-                        return prompt_data["outputs"]
+                    # 检查是否执行完成
+                    if "outputs" in prompt_info and prompt_info.get("status", {}).get("status", "") == "success":
+                        # 获取输出文件路径
+                        output_files = []
+                        for node_id, node_output in prompt_info["outputs"].items():
+                            if "images" in node_output:
+                                for image in node_output["images"]:
+                                    file_path = os.path.join(self.comfyui_root, "output", image["filename"])
+                                    if os.path.exists(file_path):
+                                        output_files.append(file_path)
+                        
+                        if output_files:
+                            return output_files
+                        else:
+                            raise Exception("找不到输出文件")
                     
-                    if prompt_data.get("status", {}).get("status") == "error":
-                        error_msg = prompt_data.get("status", {}).get("error", "未知错误")
-                        logger.error(f"工作流处理失败: {error_msg}")
-                        return None
-                
+                    # 检查是否出错
+                    if prompt_info.get("status", {}).get("status", "") == "error":
+                        error_msg = prompt_info.get("status", {}).get("message", "未知错误")
+                        raise Exception(f"工作流执行出错: {error_msg}")
+
+                # 等待一段时间后再次检查
                 time.sleep(1)
-            except Exception as e:
-                logger.error(f"检查工作流状态失败: {str(e)}")
-                return None
-        
-        logger.error("工作流处理超时")
-        return None
+
+        except Exception as e:
+            logger.error(f"等待输出失败: {str(e)}")
+            logger.error(traceback.format_exc())
+            return None
     
     def _save_output(self, output_data, output_path):
-        """保存工作流输出"""
+        """保存ComfyUI的输出"""
         try:
-            logger.debug(f"正在保存输出: {output_path}")
-            
-            first_node = next(iter(output_data.values()))
-            
-            if "images" in first_node:
+            if not output_data:
+                raise Exception("没有输出数据")
+
+            # 确保输出目录存在
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+            # 检查输出类型
+            if isinstance(output_data, list) and len(output_data) > 0:
                 # 处理图片输出
-                image_data = first_node["images"][0]
-                image_url = f"{self.comfyui_url}/view?filename={image_data['filename']}"
-                
-                response = requests.get(image_url)
-                if response.status_code != 200:
-                    raise Exception(f"下载输出失败: {response.status_code}")
-                    
-                with open(output_path, 'wb') as f:
-                    f.write(response.content)
-                
-            elif "animated" in first_node:
-                # 处理动画输出
-                animation_data = first_node["animated"]
-                animation_url = f"{self.comfyui_url}/view?filename={animation_data['filename']}"
-                
-                response = requests.get(animation_url)
-                if response.status_code != 200:
-                    raise Exception(f"下载输出失败: {response.status_code}")
-                    
-                with open(output_path, 'wb') as f:
-                    f.write(response.content)
+                if output_path.endswith('.gif'):
+                    # 对于动画输出，直接复制生成的GIF文件
+                    gif_path = output_data[0]
+                    if os.path.exists(gif_path):
+                        shutil.copy2(gif_path, output_path)
+                        logger.info(f"已保存动画到: {output_path}")
+                    else:
+                        raise Exception(f"找不到生成的GIF文件: {gif_path}")
+                else:
+                    # 对于普通图片输出，保存第一张图片
+                    image_path = output_data[0]
+                    if os.path.exists(image_path):
+                        shutil.copy2(image_path, output_path)
+                        logger.info(f"已保存图片到: {output_path}")
+                    else:
+                        raise Exception(f"找不到生成的图片文件: {image_path}")
             else:
-                raise Exception("输出数据格式不正确")
-                
+                raise Exception("无效的输出数据格式")
+
+            return True
+
         except Exception as e:
             logger.error(f"保存输出失败: {str(e)}")
-            raise 
+            logger.error(traceback.format_exc())
+            return False 
