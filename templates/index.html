@@ -726,7 +726,7 @@
                     <div class="card-body">
                         <h5 class="card-title">美化程度</h5>
                         <div class="slider-container">
-                            <input type="range" class="form-range" id="denoiseSlider" min="50" max="100" value="60">
+                            <input type="range" class="form-range" id="denoiseSlider" min="0" max="100" value="60">
                             <div class="text-center mt-3">
                                 <span id="denoiseValue" class="fs-4">60%</span>
                             </div>
@@ -896,8 +896,7 @@
                 const formData = new FormData();
                 formData.append('file', file);
                 const sliderValue = parseInt(denoiseSlider.value);
-                const denoise = sliderValue / 100;  // 直接使用滑块值除以100
-                formData.append('denoise_value', denoise);
+                formData.append('denoise_value', sliderValue);  // 直接发送原始值
 
                 uploadLoading.style.display = 'flex';
                 adjustButton.disabled = true;
@@ -977,35 +976,61 @@
                         const origImgUrl = data.original + '?' + new Date().getTime();
                         const enhancedImgUrl = data.enhanced + '?' + new Date().getTime();
                         
-                        // 预加载图片，确认它们可以正确加载
-                        const checkImageLoading = (url, description) => {
-                            const testImg = new Image();
-                            testImg.onload = () => console.log(`${description} image loaded successfully, dimensions: ${testImg.width}x${testImg.height}`);
-                            testImg.onerror = () => console.error(`Failed to load ${description} image from: ${url}`);
-                            testImg.src = url;
+                        // 添加重试机制的图片加载函数
+                        const loadImageWithRetry = (url, description, maxRetries = 3) => {
+                            return new Promise((resolve, reject) => {
+                                let retries = 0;
+                                
+                                const tryLoad = () => {
+                                    const img = new Image();
+                                    img.onload = () => {
+                                        console.log(`${description} image loaded successfully, dimensions: ${img.width}x${img.height}`);
+                                        resolve(img);
+                                    };
+                                    img.onerror = () => {
+                                        retries++;
+                                        console.error(`Failed to load ${description} image (attempt ${retries}/${maxRetries})`);
+                                        if (retries < maxRetries) {
+                                            console.log(`Retrying ${description} image load...`);
+                                            setTimeout(tryLoad, 1000); // 1秒后重试
+                                        } else {
+                                            reject(new Error(`Failed to load ${description} image after ${maxRetries} attempts`));
+                                        }
+                                    };
+                                    img.src = url;
+                                };
+                                
+                                tryLoad();
+                            });
                         };
                         
-                        checkImageLoading(origImgUrl, 'Original');
-                        checkImageLoading(enhancedImgUrl, 'Enhanced');
-                        
-                        // 设置图片源并确保显示
-                        originalPreview.src = origImgUrl;
-                        originalPreview.style.display = 'block';
-                        originalPreview.onload = () => console.log('Original image displayed in DOM');
-                        originalPreview.onerror = () => console.error('Error displaying original image in DOM');
-                        
-                        enhancedPreview.src = enhancedImgUrl;
-                        enhancedPreview.style.display = 'block';
-                        enhancedPreview.onload = () => console.log('Enhanced image displayed in DOM');
-                        enhancedPreview.onerror = () => console.error('Error displaying enhanced image in DOM');
-                        
-                        // 启用按钮
-                        adjustButton.disabled = false;
-                        animateButton.disabled = false;
-                        uploadButtonImg.src = '/static/buttons/upload.png';
-                        
-                        // 保存原始图片路径
-                        originalFilePath = data.original;
+                        // 使用 Promise.all 同时加载两张图片
+                        Promise.all([
+                            loadImageWithRetry(origImgUrl, 'Original'),
+                            loadImageWithRetry(enhancedImgUrl, 'Enhanced')
+                        ]).then(([origImg, enhancedImg]) => {
+                            // 设置原始图片
+                            originalPreview.src = origImg.src;
+                            originalPreview.style.display = 'block';
+                            console.log('Original image displayed in DOM');
+                            
+                            // 设置美化后的图片
+                            enhancedPreview.src = enhancedImg.src;
+                            enhancedPreview.style.display = 'block';
+                            console.log('Enhanced image displayed in DOM');
+                            
+                            // 启用按钮
+                            adjustButton.disabled = false;
+                            animateButton.disabled = false;
+                            uploadButtonImg.src = '/static/buttons/upload.png';
+                            
+                            // 保存原始图片路径
+                            originalFilePath = data.original;
+                        }).catch(error => {
+                            console.error('Error loading images:', error);
+                            alert('图片加载失败，请刷新页面重试');
+                            uploadButtonImg.src = '/static/buttons/upload.png';
+                        });
                     } else {
                         alert('图片美化失败: ' + data.error);
                         uploadButtonImg.src = '/static/buttons/upload.png';
@@ -1029,8 +1054,7 @@
 
                 try {
                     const sliderValue = parseInt(denoiseSlider.value);
-                    const denoise = sliderValue / 100;  // 直接使用滑块值除以100
-
+                    
                     // 创建一个FormData对象，与上传时相同的格式
                     const formData = new FormData();
                     
@@ -1038,7 +1062,7 @@
                     const response = await fetch(originalPreview.src);
                     const blob = await response.blob();
                     formData.append('file', blob, 'image.png');
-                    formData.append('denoise_value', denoise);
+                    formData.append('denoise_value', sliderValue);  // 直接发送原始值
 
                     const enhanceResponse = await fetch('/enhance', {
                         method: 'POST',

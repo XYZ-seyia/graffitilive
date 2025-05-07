@@ -90,62 +90,40 @@ def index():
 def enhance_image():
     """处理图片美化请求"""
     try:
-        # 处理上传文件
-        success, result, status_code = process_uploaded_file(request.files.get('file'))
-        if not success:
-            return jsonify(result), status_code
-            
-        filepath = result['filepath']
-        filename = result['filename']
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': '没有上传文件'})
         
-        logger.info(f"文件上传成功：{filepath}")
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': '没有选择文件'})
         
-        # 检查文件是否存在
-        if not os.path.exists(filepath):
-            logger.error(f"上传后文件不存在: {filepath}")
-            return jsonify({'error': '文件上传后未找到'}), 500
-            
         # 获取降噪值
-        try:
-            denoise_value = float(request.form.get('denoise_value', 0.6))
-            if not 0.6 <= denoise_value <= 1.0:
-                return jsonify({'error': '降噪值必须在0.6到1.0之间'}), 400
-        except ValueError:
-            return jsonify({'error': '降噪值格式错误'}), 400
-            
-        # 使用ComfyUI美化图片
-        logger.info(f"开始美化图片: {filepath}, 降噪值: {denoise_value}")
-        enhanced_path = comfyui_service.enhance_image(filepath, denoise_value)
+        denoise_value = float(request.form.get('denoise_value', 60))
         
-        if not enhanced_path:
-            logger.error("美化图片失败，enhanced_path为空")
-            return jsonify({'error': '图片美化失败'}), 500
-            
-        # 检查美化后的图片是否存在
-        if not os.path.exists(enhanced_path):
-            logger.error(f"美化后的图片不存在: {enhanced_path}")
-            return jsonify({'error': '美化后的图片未找到'}), 500
-            
-        # 构建响应数据 - 只返回图片路径，不包含评论
-        original_url = f"/uploads/{filename}"
-        enhanced_url = f"/uploads/{os.path.basename(enhanced_path)}"
+        # 验证降噪值范围（0-100）
+        if not 0 <= denoise_value <= 100:
+            return jsonify({'success': False, 'error': f'降噪值必须在0%到100%之间, 当前值: {denoise_value}%'})
         
-        logger.info(f"原始图片URL: {original_url}")
-        logger.info(f"美化后图片URL: {enhanced_url}")
-        logger.info(f"美化后图片文件路径: {enhanced_path}")
+        # 保存上传的文件
+        filename = secure_filename(file.filename)
+        file_path = os.path.join('uploads', filename)
+        file.save(file_path)
         
-        response_data = {
-            'success': True,
-            'original': original_url,
-            'enhanced': enhanced_url
-        }
+        # 调用 ComfyUI 服务进行图片美化
+        enhanced_path = comfyui_service.enhance_image(file_path, denoise_value)
+        
+        if enhanced_path:
+            return jsonify({
+                'success': True,
+                'original': f'/uploads/{filename}',
+                'enhanced': f'/uploads/{os.path.basename(enhanced_path)}'
+            })
+        else:
+            return jsonify({'success': False, 'error': '图片美化失败'})
             
-        return jsonify(response_data)
-        
     except Exception as e:
-        logger.error(f"处理失败: {str(e)}")
-        logger.exception("详细错误信息")  # 输出详细错误堆栈
-        return jsonify({'error': '处理失败', 'details': str(e)}), 500
+        logger.error(f"图片美化失败: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/adjust', methods=['POST'])
 def adjust_image():
@@ -153,7 +131,7 @@ def adjust_image():
     try:
         data = request.json
         image_path = data.get('image_path', '').split('?')[0]  # 移除查询参数
-        denoise_value = float(data.get('denoise_value', 0.6))
+        denoise_value = float(data.get('denoise_value', 60))  # 默认值改为60
         
         if not image_path:
             return jsonify({'status': 'error', 'error': '没有提供图片路径'})
@@ -164,9 +142,9 @@ def adjust_image():
         if not os.path.exists(filepath):
             return jsonify({'status': 'error', 'error': f"找不到图片文件: {filename}"})
             
-        # 验证降噪值
-        if not 0.6 <= denoise_value <= 1.0:
-            return jsonify({'status': 'error', 'error': f"降噪值必须在0.6到1.0之间，当前值: {denoise_value}"})
+        # 验证降噪值范围（0-100）
+        if not 0 <= denoise_value <= 100:
+            return jsonify({'status': 'error', 'error': f'降噪值必须在0%到100%之间, 当前值: {denoise_value}%'})
             
         # 使用ComfyUI调整图片
         enhanced_path = comfyui_service.enhance_image(filepath, denoise_value)

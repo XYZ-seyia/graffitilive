@@ -11,8 +11,8 @@ class PromptGenerationAgent:
     def __init__(self):
         self.llm_studio_url = os.getenv("LLM_STUDIO_URL", "http://localhost:1234")
         self.model_name = os.getenv("LLM_MODEL", "default")
-        self.style_base = "cute style, simple lines, children's drawing style, white background"
-        self.negative_base = "low quality, blurry, distorted, bad anatomy, text, watermark, multiple characters, duplicate, multiple views"
+        self.style_base = "cute style, simple lines, children's drawing style, no background, sticker"
+        self.negative_base = "low quality, blurry, distorted, bad anatomy, text, watermark, multiple characters, duplicate, multiple views, many heads, mutiple heads, background, extra subjects, extra objects"
     
     def generate_from_analysis(self, analysis_result: Dict) -> Dict:
         """
@@ -43,6 +43,7 @@ class PromptGenerationAgent:
 5. 保持简洁清晰的描述
 6. 确保提示词间的关系合理
 7. 如果图片是黑白的，那么提示词中不需要出现black and white
+8. 如果接受到了图片的彩色信息，那么需要包含颜色加部位，例如：blue hair, yellow dress, red shoes
 
 示例格式：
 a cute little girl, wearing blue dress, holding a teddy bear, standing in garden, soft lighting

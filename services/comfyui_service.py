@@ -47,7 +47,7 @@ class ComfyUIService:
         except Exception as e:
             logger.debug(f"无法列出 ComfyUI 目录内容: {str(e)}")
     
-    def enhance_image(self, image_path, denoise_value=0.6):
+    def enhance_image(self, image_path, denoise_value=60):
         """使用ComfyUI美化图片"""
         try:
             logger.info("开始处理图片美化任务")
@@ -56,8 +56,11 @@ class ComfyUIService:
                 logger.error(f"图片文件不存在: {image_path}")
                 return None
             
-            if not 0.6 <= denoise_value <= 1.0:
-                logger.error(f"降噪值必须在0.6到1.0之间, 当前值: {denoise_value}")
+            # 将百分比转换为0-1.0范围的值
+            denoise_value = float(denoise_value) / 100.0
+            
+            if not 0.0 <= denoise_value <= 1.0:
+                logger.error(f"降噪值必须在0%到100%之间, 当前值: {denoise_value * 100}%")
                 return None
             
             original_filename = os.path.basename(image_path)
@@ -79,6 +82,15 @@ class ComfyUIService:
             negative_prompt = result["prompts"]["negative_prompt"]
             
             # 输出提示词
+            print("\n" + "="*50)
+            print("图片美化提示词信息:")
+            print("-"*50)
+            print(f"正面提示词: {positive_prompt}")
+            print("-"*50)
+            print(f"负面提示词: {negative_prompt}")
+            print("="*50 + "\n")
+            
+            # 同时记录到日志
             logger.info("\n=== 图片美化提示词 ===")
             logger.info(f"正面提示词: {positive_prompt}")
             logger.info(f"负面提示词: {negative_prompt}")
@@ -108,12 +120,25 @@ class ComfyUIService:
             
             # 更新工作流配置
             try:
-                workflow["18"]["inputs"]["image"] = original_filename
-                workflow["3"]["inputs"]["denoise"] = denoise_value
+                # 更新图片加载节点
+                workflow["50"]["inputs"]["image"] = original_filename
+                
+                # 更新降噪值（通过 FloatSlider 节点）
+                workflow["48"]["inputs"]["float_value"] = denoise_value
+                
+                # 更新提示词
                 workflow["6"]["inputs"]["text"] = positive_prompt
                 workflow["7"]["inputs"]["text"] = negative_prompt
+                
+                # 更新 LoRA
                 workflow["28"]["inputs"]["lora_name"] = "白边贴纸·风格_v1.0.safetensors"
+                
                 logger.info("已更新工作流配置")
+                logger.debug(f"工作流配置详情:")
+                logger.debug(f"- 输入图片: {original_filename}")
+                logger.debug(f"- 降噪值: {denoise_value}")
+                logger.debug(f"- 正面提示词: {positive_prompt}")
+                logger.debug(f"- 负面提示词: {negative_prompt}")
             except KeyError as e:
                 logger.error(f"工作流配置错误: {str(e)}")
                 return None

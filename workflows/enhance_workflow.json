@@ -1,12 +1,15 @@
 {
   "3": {
     "inputs": {
-      "seed": 23687749461254,
+      "seed": 474907445384516,
       "steps": 20,
-      "cfg": 8,
+      "cfg": 9,
       "sampler_name": "dpmpp_2m",
       "scheduler": "normal",
-      "denoise": 0.6,
+      "denoise": [
+        "48",
+        0
+      ],
       "model": [
         "28",
         0
@@ -20,7 +23,7 @@
         0
       ],
       "latent_image": [
-        "19",
+        "10",
         0
       ]
     },
@@ -31,7 +34,7 @@
   },
   "6": {
     "inputs": {
-      "text": "A girl in a blue princess dress, one golden crown on her head, her long, soft brown hair falling naturally, smile expression, The overall cartoon style is brightly colored, with smooth lines, simple and white background, no background elements, sticker, Subject is distinguished from background",
+      "text": "a cute little girl, wearing flower dress, drawing on blank background, simple lines, black outlines, adorable style, childlike artwork, cute style, simple lines, children's drawing style, white background, sticker",
       "clip": [
         "28",
         1
@@ -44,7 +47,7 @@
   },
   "7": {
     "inputs": {
-      "text": "bad hands, text, watermark, low quality, blurry, malformed, abnormal\n",
+      "text": "low quality, blurry, distorted, bad anatomy, text, watermark, multiple characters, duplicate, multiple views, many heads, mutiple heads, background, extra subjects, extra objects",
       "clip": [
         "28",
         1
@@ -58,17 +61,11 @@
   "10": {
     "inputs": {
       "upscale_method": "nearest-exact",
-      "width": [
-        "21",
-        0
-      ],
-      "height": [
-        "22",
-        0
-      ],
+      "width": 600,
+      "height": 800,
       "crop": "disabled",
       "samples": [
-        "3",
+        "19",
         0
       ]
     },
@@ -79,7 +76,7 @@
   },
   "11": {
     "inputs": {
-      "seed": 110690920600144,
+      "seed": 748711566771012,
       "steps": 15,
       "cfg": 8,
       "sampler_name": "dpmpp_2m",
@@ -98,7 +95,7 @@
         0
       ],
       "latent_image": [
-        "10",
+        "58",
         0
       ]
     },
@@ -132,20 +129,10 @@
       "title": "Load Checkpoint"
     }
   },
-  "18": {
-    "inputs": {
-      "image": "",
-      "upload": "image"
-    },
-    "class_type": "LoadImage",
-    "_meta": {
-      "title": "Load Image"
-    }
-  },
   "19": {
     "inputs": {
       "pixels": [
-        "18",
+        "50",
         0
       ],
       "vae": [
@@ -156,70 +143,6 @@
     "class_type": "VAEEncode",
     "_meta": {
       "title": "VAE Encode"
-    }
-  },
-  "20": {
-    "inputs": {
-      "image": [
-        "18",
-        0
-      ]
-    },
-    "class_type": "GetImageSize+",
-    "_meta": {
-      "title": "🔧 Get Image Size"
-    }
-  },
-  "21": {
-    "inputs": {
-      "a": [
-        "20",
-        0
-      ],
-      "b": [
-        "27",
-        0
-      ],
-      "operation": "multiply"
-    },
-    "class_type": "easy mathInt",
-    "_meta": {
-      "title": "Math Int"
-    }
-  },
-  "22": {
-    "inputs": {
-      "a": [
-        "20",
-        1
-      ],
-      "b": [
-        "26",
-        0
-      ],
-      "operation": "multiply"
-    },
-    "class_type": "easy mathInt",
-    "_meta": {
-      "title": "Math Int"
-    }
-  },
-  "26": {
-    "inputs": {
-      "float": 1.2000000000000002
-    },
-    "class_type": "VFI FloatToInt",
-    "_meta": {
-      "title": "VFI FloatToInt"
-    }
-  },
-  "27": {
-    "inputs": {
-      "float": 1.2000000000000002
-    },
-    "class_type": "VFI FloatToInt",
-    "_meta": {
-      "title": "VFI FloatToInt"
     }
   },
   "28": {
@@ -261,11 +184,36 @@
   },
   "48": {
     "inputs": {
-      "float": 0.6
+      "float_value": 0.8700000000000002
     },
-    "class_type": "VFI FloatToInt",
+    "class_type": "FloatSlider",
     "_meta": {
-      "title": "VFI FloatToInt"
+      "title": "Float Slider Node"
+    }
+  },
+  "50": {
+    "inputs": {
+      "image": "19f1a3bb116d35c791c369c68ccad6b3.jpg"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "58": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "width": 752,
+      "height": 1000,
+      "crop": "disabled",
+      "samples": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "LatentUpscale",
+    "_meta": {
+      "title": "Upscale Latent"
     }
   }
 }
